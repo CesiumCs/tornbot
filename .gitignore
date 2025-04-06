@@ -137,3 +137,6 @@ dist
 
 # VSCode Workspaces
 *.code-workspace
+
+config.json
+state.json
