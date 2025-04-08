@@ -7,8 +7,19 @@ const config = require('./config.json');
 const state = require('./state.json');
 
 // the basic discord setup stuff yoinked from their guide
-const { Client, Collection, Events, GatewayIntentBits, SlashCommandBuilder } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, Partials } = require('discord.js');
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages, 
+        GatewayIntentBits.MessageContent
+    ],
+    partials: [
+        Partials.Channel,
+        Partials.Message
+      ]
+});
 client.once(Events.ClientReady, readyClient => {
 	console.log(`Connected to Discord as ${readyClient.user.tag}`);
 });
@@ -66,5 +77,47 @@ client.on(Events.InteractionCreate, async interaction => {
         } else {
             await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
         }
+    }
+});
+
+
+client.on(Events.MessageCreate, message => {
+    // if we smell a profile link, resolve it
+    const regexProfile = /https?:\/\/(?:www\.)?torn\.com\/profiles.*?[?&]XID=(\d+)/;
+    if (message.content.match(regexProfile)) {
+        const profileId = message.content.match(regexProfile)[1]
+        torn.user.profile(profileId).then(data => {
+            if (data.name) { // copied from commands/utility/profile.js
+                switch (data.status.color) {
+                    case 'green':
+                        data.status.hex = 0x69A829
+                        break
+                    case 'orange':
+                        data.status.hex = 0xF6B200
+                        break
+                    case 'red':
+                        data.status.hex = 0xF78483
+                        break
+                    case 'blue':
+                        data.status.hex = 0x4A91B2
+                }
+                // the embed is also copied from the profile command,
+                // but this way we can tweak it
+                const userEmbed = new EmbedBuilder()
+                    .setColor(data.status.hex)
+                    .setTitle(`${data.name} [${data.player_id}]`)
+                    .setURL(`https://torn.com/profiles.php?XID=${data.player_id}`)
+                    .setImage(data.profile_image)
+                    .setDescription(data.rank)
+                    .addFields(
+                        { name: data.status.description, value: data.status.details },
+                        { name: 'Level', value: `${data.level}`, inline: true },
+                        { name: 'Age', value: `${data.age} days`, inline: true },
+                        { name: `${data.last_action.status}`, value: `${data.last_action.relative}`, inline: true },
+                    );
+                console.log(userEmbed)
+                message.reply({ embeds: [userEmbed] })
+            }
+        });
     }
 });
