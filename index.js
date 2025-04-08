@@ -22,7 +22,7 @@ const client = new Client({
       ]
 });
 client.once(Events.ClientReady, readyClient => {
-	console.log(`Connected to Discord as ${readyClient.user.tag}`);
+	console.log(`Discord: Connected as ${readyClient.user.tag}`);
 });
 client.login(config.token);
 client.commands = new Collection();
@@ -37,10 +37,10 @@ fs.readdir('./tasks/', (err, files) => {
         const taskName = file.split('.')[0];
         task[taskName] = taskFile;
         if (taskFile.schedule) {
-            console.log(`Scheduling task "${taskName}" for ${taskFile.schedule}`);
+            console.log(`Tasks: Scheduling "${taskName}" for ${taskFile.schedule}`);
             cron.schedule(taskFile.schedule, () => { taskFile(client, torn, config, state); });
         } else {
-            console.log(`Registered task "${taskName}"`);
+            console.log(`Tasks: Registered "${taskName}"`);
         }
     });
 });
@@ -56,7 +56,7 @@ const commandFolders = fs.readdirSync(foldersPath);
         const command = require(filePath);
         if ('data' in command && 'execute' in command) {
             client.commands.set(command.data.name, command);
-            console.log(`Registered command "${command.data.name}"`);
+            console.log(`Commands: Registered "${command.data.name}"`);
         } else {
             console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
         }
