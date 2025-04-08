@@ -115,7 +115,6 @@ client.on(Events.MessageCreate, message => {
                         { name: 'Age', value: `${data.age} days`, inline: true },
                         { name: `${data.last_action.status}`, value: `${data.last_action.relative}`, inline: true },
                     );
-                console.log(userEmbed)
                 message.reply({ embeds: [userEmbed] })
             }
         });
