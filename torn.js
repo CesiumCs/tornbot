@@ -41,7 +41,7 @@ module.exports.self = {
             const response = await fetch(url);
             const data = await response.json();
             config.tornid = data.player_id;
-            console.log('retreived player id: ' + data.player_id)
+            console.log(`Torn: Retrieved default ID as "${data.player_id}"`)
             return(data.player_id);
         } else return config.tornid;
     }

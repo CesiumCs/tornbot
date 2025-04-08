@@ -8,6 +8,7 @@ const state = require('./state.json');
 
 // the basic discord setup stuff yoinked from their guide
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, Partials } = require('discord.js');
+const { profile } = require('node:console');
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds, 
@@ -86,8 +87,10 @@ client.on(Events.MessageCreate, message => {
     const regexProfile = /https?:\/\/(?:www\.)?torn\.com\/profiles.*?[?&]XID=(\d+)/;
     if (message.content.match(regexProfile)) {
         const profileId = message.content.match(regexProfile)[1]
+        console.log(`Chat: Detected profile link "${profileId}" in message`);
         torn.user.profile(profileId).then(data => {
             if (data.name) { // copied from commands/utility/profile.js
+                console.log(`Chat: Resolved as "${data.name}"`)
                 switch (data.status.color) {
                     case 'green':
                         data.status.hex = 0x69A829
@@ -107,7 +110,7 @@ client.on(Events.MessageCreate, message => {
                     .setColor(data.status.hex)
                     .setTitle(`${data.name} [${data.player_id}]`)
                     .setURL(`https://torn.com/profiles.php?XID=${data.player_id}`)
-                    .setImage(data.profile_image)
+                    .setThumbnail(data.profile_image)
                     .setDescription(data.rank)
                     .addFields(
                         { name: data.status.description, value: data.status.details },
@@ -116,7 +119,7 @@ client.on(Events.MessageCreate, message => {
                         { name: `${data.last_action.status}`, value: `${data.last_action.relative}`, inline: true },
                     );
                 message.reply({ embeds: [userEmbed] })
-            }
+            } else console.log("Chat: Unable to resolve profile")
         });
     }
 });

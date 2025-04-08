@@ -10,16 +10,20 @@ module.exports = {
 			.setDescription('User ID')),
 	async execute(interaction) {
 		let id
-		console.log(interaction.options.getInteger('id'))
 		if (!interaction.options.getInteger('id')) {
 			id = await torn.self.id()
-			console.log(id + " yes")
+			console.log(`Profile: Looking up "${id}"`)
 		} else {
 			id = interaction.options.getInteger('id');
-			console.log(id + " no");
+			console.log(`Profile: Looking up "${id}"`)
 		}
-		userdata = await torn.user.profile(id);
-		console.log(userdata)
+		userdata = await torn.user.profile(id).catch(console.error);
+		if (!userdata.name) {
+			console.log("Profile: Unable to resolve profile")
+			await interaction.reply("Failed to get profile data :(").catch(console.error);
+			return
+		}
+		console.log(`Profile: Resolved as "${userdata.name}"`)
 		switch (userdata.status.color) {
 			case 'green':
 				userdata.status.hex = 0x69A829
@@ -47,6 +51,6 @@ module.exports = {
 				{ name: `${userdata.last_action.status}`, value: `${userdata.last_action.relative}`, inline: true },
 			)
 
-		await interaction.reply({ embeds: [userEmbed] });
+		await interaction.reply({ embeds: [userEmbed] }).catch(console.error);
 	},
 };
