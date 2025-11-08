@@ -1,0 +1,6 @@
+services:
+  bot:
+    restart: unless-stopped
+    build: .
+    volumes:
+      - ./config.json:/usr/src/bot/config.json
