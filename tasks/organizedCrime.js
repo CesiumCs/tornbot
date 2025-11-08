@@ -57,4 +57,4 @@ module.exports = async (client, torn, config, state) => {
     });
 };
 
-module.exports.schedule = '* * * * *';
+module.exports.schedule = '30 * * * *';
