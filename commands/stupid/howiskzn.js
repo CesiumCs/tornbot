@@ -32,7 +32,6 @@ module.exports = {
             )
 
         const faction = await torn.faction.basic(KZNKing.faction.faction_id)
-        console.log(faction)
         const facEmbed = new EmbedBuilder()
             .setTitle(faction.name)
             .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction.id}`)
