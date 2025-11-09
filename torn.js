@@ -31,6 +31,19 @@ module.exports.user = {
     }
 };
 
+module.exports.faction = {
+    async basic(faction) {
+        const response = await fetch(`https://api.torn.com/v2/faction/${faction}/basic?key=${config.torn}`);
+        const data = await response.json();
+        return(data.basic);
+    },
+    async members(faction) {
+        const response = await fetch(`https://api.torn.com/v2/faction/${faction}/members?striptags=true&key=${config.torn}`);
+        const data = await response.json();
+        return(data);
+    }
+}
+
 module.exports.item = async (item) => {
     const response = await fetch(`https://api.torn.com/v2/torn/${item}/items?sort=ASC&key=${config.torn}`);
     const data = await response.json();
