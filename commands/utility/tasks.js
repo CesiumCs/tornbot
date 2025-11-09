@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-const torn = require('../../torn.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()

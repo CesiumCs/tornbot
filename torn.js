@@ -1,7 +1,5 @@
 const config = require('./config')
-module.exports = (client, torn, config, state) => {
-    //console.log(`example log ${client.user.tag}`);
-};
+module.exports = () => {};
 module.exports.readyCheck = async (key) => {
     const url = `https://api.torn.com/user/?selections=basic&key=${key}` 
     const response = await fetch(url);

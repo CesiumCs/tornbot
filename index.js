@@ -8,7 +8,6 @@ const state = require('./state.json');
 
 // the basic discord setup stuff yoinked from their guide
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, Partials, MessageFlags } = require('discord.js');
-const { profile } = require('node:console');
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds, 

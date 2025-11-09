@@ -17,7 +17,7 @@ module.exports = {
 			id = interaction.options.getInteger('id');
 			console.log(`Profile: Looking up "${id}"`)
 		}
-		userdata = await torn.user.profile(id).catch(console.error);
+		let userdata = await torn.user.profile(id).catch(console.error);
 		if (!userdata.name) {
 			console.log("Profile: Unable to resolve profile")
 			await interaction.reply("Failed to get profile data :(").catch(console.error);
