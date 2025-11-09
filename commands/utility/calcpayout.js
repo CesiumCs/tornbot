@@ -7,8 +7,7 @@ module.exports = {
 		.setDescription('[WIP] Calculate war payout based on participation')
 		.addIntegerOption(option => 
 			option.setName('total')
-			.setDescription('Full war earnings total before cuts'))
-            .setRequired(true),
+			.setDescription('Full war earnings total before cuts')),
 	async execute(interaction) {
         const total = interaction.options.getInteger('total');
         const lastWarRaw = await torn.api('https://api.torn.com/v2/faction/rankedwars?offset=0&limit=1&sort=DESC');
