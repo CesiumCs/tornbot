@@ -1,10 +1,10 @@
 # goofy discord torn bot
 
-not actually anything useful, im just trying to learn javascript again
-
 ## usage
 
-hopefully `npm i` should just get the dependencies
+edit `default.config.json` into `config.json`
 
-and copy default.config.json to config.json and edit in at least the discord
-token and torn api key, i forget if i use the other things at all lol
+copy `docker-compose.yml.default` to `docker.compose.yml` and tweak if needed
+
+if you have docker set up already, it should be good to spin up `docker-compose up -d`,
+which should handle dependencies and all that
