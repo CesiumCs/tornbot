@@ -53,6 +53,12 @@ module.exports = async (client, torn, config, state) => {
                 state.ocAlertLast = now.toISOString();
                 fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
             }
+        } else {
+            const now = new Date();
+            const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            state.ocAlertLast = twentyFourHoursAgo.toISOString();
+            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
+            
         }
     });
 };
