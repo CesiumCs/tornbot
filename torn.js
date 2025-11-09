@@ -33,6 +33,12 @@ module.exports.user = {
     }
 };
 
+module.exports.item = async (item) => {
+    const response = await fetch(`https://api.torn.com/v2/torn/${item}/items?sort=ASC&key=${config.torn}`);
+    const data = await response.json();
+    return(data);
+}
+
 
 module.exports.self = {
     async id() {
