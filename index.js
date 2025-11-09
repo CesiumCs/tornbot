@@ -84,7 +84,7 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.MessageCreate, message => {
     // if we smell a profile link, resolve it
     const regexProfile = /https?:\/\/(?:www\.)?torn\.com\/profiles.*?[?&]XID=(\d+)/;
-    if (message.content.match(regexProfile)) {
+    if (message.content.match(regexProfile) && !message.author.bot) {
         const profileId = message.content.match(regexProfile)[1]
         console.log(`Chat: Detected profile link "${profileId}" in message`);
         torn.user.profile(profileId).then(data => {
