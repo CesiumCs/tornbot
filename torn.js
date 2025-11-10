@@ -85,6 +85,17 @@ module.exports.faction = {
     }
 }
 
+module.exports.company = async (company) => {
+        let response
+        if (company) {
+            response = await fetch(`https://api.torn.com/company/${company}?selections=profile&key=${config.torn}`);
+        } else {
+            response = await fetch(`https://api.torn.com/company/?selections=profile&key=${config.torn}`);
+        }
+            const data = await response.json();
+            return(data.company);
+}
+
 module.exports.item = async (item) => {
     const response = await fetch(`https://api.torn.com/v2/torn/${item}/items?sort=ASC&key=${config.torn}`);
     const data = await response.json();

@@ -14,21 +14,48 @@ module.exports = {
         (KZNKing.job.position === "Director") ? message += `He is director of ${KZNKing.job.company_name}. ` : message += `He is not director of a company. `;
         (KZNKing.faction.position === "Leader") ? message += `He is leader of ${KZNKing.faction.faction_name}. ` : message += `He is not leader of his faction. `;
         
-        const company = (await torn.api(`https://api.torn.com/v2/user/${kznID}/job?`)).job;
+        const company = (await torn.company(KZNKing.job.company_id));
+        console.log(company);
         const jobEmbed = new EmbedBuilder()
             .setTitle(company.name)
-            .setURL(`https://www.torn.com/joblist.php#/p=corpinfo&ID=${company.id}`)
+            .setURL(`https://www.torn.com/joblist.php#/p=corpinfo&ID=${company.ID}`)
             .addFields(
                 {
-                name: "Stars",
-                value: String(company.rating),
+                name: "Daily Income",
+                value: `$${company.daily_income.toLocaleString()}`,
+                inline: true
+                },
+                {
+                name: "Weekly Income",
+                value: `$${company.weekly_income.toLocaleString()}`,
                 inline: true
                 },
                 {
                 name: "Days",
-                value: String(company.days_in_company),
+                value: String(company.days_old),
                 inline: true
                 },
+                {
+                name: "Daily Customers",
+                value: `${company.daily_customers}`,
+                inline: true
+                },
+                {
+                name: "Weekly Customers",
+                value: `${company.weekly_customers}`,
+                inline: true
+                },
+                {
+                name: "Employees",
+                value: `${company.employees_hired}/${company.employees_capacity}`,
+                inline: true
+                },
+                {
+                name: "Stars",
+                value: String(company.rating),
+                inline: true
+                }
+
             )
 
         const faction = await torn.faction.basic(KZNKing.faction.faction_id)
@@ -48,14 +75,20 @@ module.exports = {
                 },
                 {
                     name: "Respect",
-                    value: `${faction.respect}`,
+                    value: `${faction.respect.toLocaleString()}`,
                     inline: true
                 },
                 {
                     name: "Age",
                     value: `${faction.days_old}`,
                     inline: true
-                }
+                },
+                {
+                    name: "Wars Won",
+                    value: `${faction.rank.wins}`,
+                    inline: true
+                },
+
             )
 
 
