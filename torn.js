@@ -77,6 +77,11 @@ module.exports.faction = {
         }
         const data = await response.json();
         return(data.crimes);
+    },
+    async upgrades() {
+        const response = await fetch(`https://api.torn.com/v2/faction/upgrades?key=${config.torn}`);
+        const data = await response.json();
+        return(data.upgrades);
     }
 }
 

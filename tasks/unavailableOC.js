@@ -4,26 +4,40 @@ module.exports = async (client, torn, config, state) => {
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
     state = require('../state.json');
+
+    let factionMaxCrime = 0;
+    const crimeLevel = (await torn.faction.upgrades()).core.upgrades.find(upgrade => upgrade.name.startsWith("Organized Crimes")).level
+    switch (crimeLevel) {
+        case 1:
+            factionMaxCrime = 2
+            break;
+        case 2:
+            factionMaxCrime = 4
+            break;
+        case 3:
+            factionMaxCrime = 6
+            break;
+        case 4:
+            factionMaxCrime = 8
+            break;
+        case 5:
+            factionMaxCrime = 10
+            break;
+        default:
+            factionMaxCrime = 0
+    }
+    console.debug(`unavailableOC: Faction max crime level determined to be ${factionMaxCrime}`);
+
     let crimes = {
-        difficulty: [
-            { 
-                name: '1/10',
-                count: 0 
-            },
-          { 
-                name: '2/10',
-                count: 0 
-            },
-            { 
-                name: '3/10',
-                count: 0 
-            },
-            { 
-                name: '4/10',
-                count: 0 
-            },
-        ]
+        difficulty: []
     };
+    for (let i = 1; i <= state.factionMaxCrime; i++) {
+        crimes.difficulty.push({
+            name: `${i}/10`,
+            count: 0
+        });
+    }
+
     let embed = new EmbedBuilder()
         .setTitle('Crime Availability Check')
     await torn.api(`https://api.torn.com/v2/faction/crimes?cat=recruiting&offset=0&sort=DESC`).then(data => {
