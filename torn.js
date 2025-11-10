@@ -1,4 +1,11 @@
-const config = require('./config')
+let config;
+try {
+    config = require('./config')
+} catch {
+    return
+}
+
+
 module.exports = () => {};
 module.exports.readyCheck = async (key) => {
     const url = `https://api.torn.com/user/?selections=basic&key=${key}` 

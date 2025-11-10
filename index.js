@@ -3,8 +3,14 @@ const fs = require('fs');
 const path = require('node:path');
 const torn = require('./torn.js');
 
-const config = require('./config.json');
-const state = require('./state.json');
+let config, state;
+try { 
+    config = require('./config.json');
+    state = require('./state.json');
+} catch {
+    console.error("Fatal: Unable to load config.json or state.json. Please follow the instructions in README.md");
+    process.exit(1);
+}
 
 // the basic discord setup stuff yoinked from their guide
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, Partials, MessageFlags } = require('discord.js');
@@ -22,11 +28,11 @@ const client = new Client({
 });
 client.once(Events.ClientReady, readyClient => {
 	console.log(`Discord: Connected as ${readyClient.user.tag}`);
+    torn.readyCheck(config.torn);
 });
 client.login(config.token);
 client.commands = new Collection();
 
-torn.readyCheck(config.torn);
 
 let task = {};
 fs.readdir('./tasks/', (err, files) => {
