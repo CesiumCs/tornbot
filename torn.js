@@ -28,19 +28,48 @@ module.exports.user = {
         const response = await fetch(`https://api.torn.com/user/${user}?selections=profile&key=${config.torn}`);
         const data = await response.json();
         return(data);
+    },
+    async stats(user, category, statName) {
+        let url = `https://api.torn.com/v2/user`;
+        if (user) { url += `/${user}/personalstats` };
+        if (category) { url += `?cat=${category}` } else { url += `?cat=all` };
+        if (statName) { url += `&stat=${statName}` };
+        const response = await fetch(url);
+        const data = await response.json();
+        return(data);
     }
 };
 
 module.exports.faction = {
     async basic(faction) {
-        const response = await fetch(`https://api.torn.com/v2/faction/${faction}/basic?key=${config.torn}`);
+        let response
+        if (faction) {
+            response = await fetch(`https://api.torn.com/v2/faction/${faction}/basic?key=${config.torn}`);
+        } else {
+            response = await fetch(`https://api.torn.com/v2/faction/basic?key=${config.torn}`);
+        }
         const data = await response.json();
         return(data.basic);
     },
     async members(faction) {
-        const response = await fetch(`https://api.torn.com/v2/faction/${faction}/members?striptags=true&key=${config.torn}`);
+        let response
+        if (faction) {
+            response = await fetch(`https://api.torn.com/v2/faction/${faction}/members?striptags=true&key=${config.torn}`);
+        } else {
+            response = await fetch(`https://api.torn.com/v2/faction/members?striptags=true&key=${config.torn}`);
+        }
         const data = await response.json();
-        return(data);
+        return(data.members);
+    },
+    async crimes(category) {
+        let response
+        if (category) {
+            response = await fetch(`https://api.torn.com/v2/faction/crimes/${category}?key=${config.torn}`);
+        } else {
+            response = await fetch(`https://api.torn.com/v2/faction/crimes?key=${config.torn}`);
+        }
+        const data = await response.json();
+        return(data.crimes);
     }
 }
 
