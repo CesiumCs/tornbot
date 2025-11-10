@@ -42,10 +42,10 @@ fs.readdir('./tasks/', (err, files) => {
         const taskName = file.split('.')[0];
         task[taskName] = taskFile;
         if (taskFile.schedule) {
-            console.log(`Tasks: Scheduling "${taskName}" for ${taskFile.schedule}`);
+            console.debug(`Tasks: Scheduling "${taskName}" for ${taskFile.schedule}`);
             cron.schedule(taskFile.schedule, () => { taskFile(client, torn, config, state); });
         } else {
-            console.log(`Tasks: Registered "${taskName}"`);
+            console.debug(`Tasks: Registered "${taskName}"`);
         }
     });
 });
@@ -61,7 +61,7 @@ const commandFolders = fs.readdirSync(foldersPath);
         const command = require(filePath);
         if ('data' in command && 'execute' in command) {
             client.commands.set(command.data.name, command);
-            console.log(`Commands: Registered "${command.data.name}"`);
+            console.debug(`Commands: Registered "${command.data.name}"`);
         } else {
             console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
         }
@@ -75,6 +75,7 @@ client.on(Events.InteractionCreate, async interaction => {
         console.error(`No command matching ${interaction.commandName} was found.`);
         return;
     } try {
+        console.debug(`Command: Executing ${interaction.commandName}`);
         await command.execute(interaction);
     } catch (error) {
         console.error(error);

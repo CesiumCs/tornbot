@@ -1,4 +1,5 @@
 module.exports = async (client, torn, config, state) => {
+    console.debug("Task: Executing unpaidOC");
     const { EmbedBuilder } = require('discord.js');
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
@@ -8,6 +9,7 @@ module.exports = async (client, torn, config, state) => {
     const data = await torn.api(`https://api.torn.com/v2/faction/crimes?cat=successful&from=${now.getTime() / 1000 - 7 * 24 * 60 * 60}&sort=DESC`);
     for (const crime of data.crimes) {
         if (!crime.rewards.payout) {
+            console.debug(`unpaidOC: Found unpaid crime: ${crime.name}:${crime.id}`);
             const execDate = new Date(crime.executed_at * 1000);
             const embed = new EmbedBuilder()
                 .setTitle(crime.name)
@@ -41,16 +43,17 @@ module.exports = async (client, torn, config, state) => {
             embeds.push(embed);
         }
     }
-    console.log(embeds)
     if (embeds.length > 0) {
         const then = new Date(state.payoutAlertLast);
         const twelveHours = 12 * 60 * 60 * 1000;
         if (now.getTime() - then.getTime() > twelveHours) {
+            console.debug(`unpaidOC: Sending alert`);
             channel.send({content: "# Unpaid Faction Crimes:", embeds: embeds });
             state.payoutAlertLast = now.toISOString();
             fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
-        } 
+        } else { console.debug(`unpaidOC: Would send alert, but one was sent recently`); }
     } else {
+            console.debug(`unpaidOC: All crimes are paid, not sending alert`);
             const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             state.payoutAlertLast = twentyFourHoursAgo.toISOString();
             fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});

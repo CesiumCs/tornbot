@@ -1,4 +1,5 @@
 module.exports = async (client, torn, config, state) => {
+    console.debug("Task: Executing unavailableOC");
     const { EmbedBuilder } = require('discord.js');
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
@@ -31,6 +32,7 @@ module.exports = async (client, torn, config, state) => {
         });
         let isSomethingZero = false;
         crimes.difficulty.forEach(difficulty => {
+            console.debug(`unavailableOC: ${difficulty.name}: ${difficulty.count}`);
             if (difficulty.count === 0) {
                 isSomethingZero = true;
                 embed.addFields({
@@ -49,11 +51,13 @@ module.exports = async (client, torn, config, state) => {
             const then = new Date(state.ocAlertLast);
             const twelveHours = 12 * 60 * 60 * 1000;
             if (now.getTime() - then.getTime() > twelveHours) {
+                console.debug(`unavailableOC: Sending alert`);
                 channel.send({ embeds: [embed] });
                 state.ocAlertLast = now.toISOString();
                 fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
-            }
+            } else { console.debug(`unavailableOC: Would send alert, but one was sent recently`); }
         } else {
+            console.debug(`unavailableOC: All crimes available, not sending alert`);
             const now = new Date();
             const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             state.ocAlertLast = twentyFourHoursAgo.toISOString();
