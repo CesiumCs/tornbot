@@ -1,9 +1,9 @@
-module.exports = async (client, torn, config, state) => {
+module.exports = async (client, torn, config) => {
     console.debug("Task: Executing unavailableOC");
     const { EmbedBuilder } = require('discord.js');
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
-    state = require('../state.json');
+    const state = require('../state.json');
 
     let factionMaxCrime = 0;
     const crimeLevel = (await torn.faction.upgrades()).core.upgrades.find(upgrade => upgrade.name.startsWith("Organized Crimes")).level

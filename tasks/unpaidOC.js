@@ -1,10 +1,10 @@
-module.exports = async (client, torn, config, state) => {
+module.exports = async (client, torn, config) => {
     console.debug("Task: Executing unpaidOC");
     const { EmbedBuilder } = require('discord.js');
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
     const now = new Date();
-    state = require('../state.json');
+    const state = require('../state.json');
     let embeds = [];
     const data = await torn.api(`https://api.torn.com/v2/faction/crimes?cat=successful&from=${now.getTime() / 1000 - 7 * 24 * 60 * 60}&sort=DESC`);
     for (const crime of data.crimes) {

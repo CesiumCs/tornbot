@@ -1,9 +1,9 @@
-module.exports = async (client, torn, config, state) => {
+module.exports = async (client, torn, config) => {
     console.debug("Task: Executing noItemOC");
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
     const now = new Date();
-    state = require('../state.json');
+    const state = require('../state.json');
     const data = await torn.api(`https://api.torn.com/v2/faction/crimes?cat=planning&sort=DESC`);
     let itemsneeded = 0;
     let message = "OCs with unavailable items:\n";
