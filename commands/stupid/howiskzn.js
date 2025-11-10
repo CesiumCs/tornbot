@@ -17,7 +17,7 @@ module.exports = {
         const company = (await torn.api(`https://api.torn.com/v2/user/${kznID}/job?`)).job;
         const jobEmbed = new EmbedBuilder()
             .setTitle(company.name)
-            .setURL(`https://www.torn.com/factions.php?step=profile&ID=${company.id}`)
+            .setURL(`https://www.torn.com/joblist.php#/p=corpinfo&ID=${company.id}`)
             .addFields(
                 {
                 name: "Stars",
