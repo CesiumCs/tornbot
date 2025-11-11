@@ -89,8 +89,10 @@ module.exports = {
             );
 
         let companyFemales = 0;
+        let companyTotal = 0;
         const companyFemalePromises = Object.entries(company.employees).map(([user]) => {
             return torn.cache.user(user).then(data => {
+                companyTotal++;
                 if (data.gender === "Female") {
                     companyFemales++;
                 }
@@ -98,9 +100,11 @@ module.exports = {
         });
             
         let factionFemales = 0;
+        let factionTotal = 0;
         const factionMembers = await torn.faction.members(KZNKing.faction.faction_id);
         const factionFemalePromises = factionMembers.map((user) => {
             return torn.cache.user(user.id).then(data => {
+                factionTotal++;
                 if (data.gender === "Female") {
                     factionFemales++;
                 }
@@ -111,10 +115,10 @@ module.exports = {
         await Promise.all(companyFemalePromises);
         await Promise.all(factionFemalePromises);
 
-        const companyFemalePercent = (companyFemales / company.employees_capacity) * 100;
-        const factionFemalePercent = (factionFemales / faction.capacity) * 100;
+        const companyFemalePercent = (companyFemales / companyTotal) * 100;
+        const factionFemalePercent = (factionFemales / factionTotal) * 100;
             
-        message += `\nbtw lol his company has ${companyFemales}/${company.employees_capacity} female employees and ${factionFemales}/${faction.capacity} female faction members\n`;
+        message += `\nbtw lol his company has ${companyFemales}/${companyTotal} female employees and ${factionFemales}/${factionTotal} female faction members\n`;
         message += `thats ${companyFemalePercent.toFixed(0)}% and ${factionFemalePercent.toFixed(0)}% respectively, and last i checked, torn has a 13% female population`;
         interaction.reply({ content: message, embeds: [jobEmbed, facEmbed] });
 	},
