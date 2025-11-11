@@ -32,15 +32,14 @@ client.once(Events.ClientReady, readyClient => {
 });
 client.login(config.token);
 client.commands = new Collection();
+client.tasks = {};
 
-
-let task = {};
 fs.readdir('./tasks/', (err, files) => {
     if (err) return console.log(err);
     files.forEach(file => {
         const taskFile = require(`./tasks/${file}`);
         const taskName = file.split('.')[0];
-        task[taskName] = taskFile;
+        client.tasks[taskName] = taskFile;
         if (taskFile.schedule) {
             console.debug(`Tasks: Scheduling "${taskName}" for ${taskFile.schedule}`);
             cron.schedule(taskFile.schedule, () => { taskFile(client, torn, config, state); });
