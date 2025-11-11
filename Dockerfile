@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:25
 RUN mkdir -p /usr/src/bot
 WORKDIR /usr/src/bot
 COPY . /usr/src/bot
