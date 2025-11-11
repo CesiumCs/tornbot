@@ -31,7 +31,7 @@ module.exports = async (client, torn, config) => {
     let crimes = {
         difficulty: []
     };
-    for (let i = 1; i <= state.factionMaxCrime; i++) {
+    for (let i = 1; i <= factionMaxCrime; i++) {
         crimes.difficulty.push({
             name: `${i}/10`,
             count: 0
