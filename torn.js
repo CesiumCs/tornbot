@@ -1,10 +1,17 @@
+const fs = require('fs');
 let config;
-try {
-    config = require('./config')
-} catch {
-    return
+let cache;
+try {config = require('./config.json')} catch {return}
+try {cache = require('./cache.json')} catch {
+    cache = {
+        items: {},
+        users: {},
+        factions: {},
+        companies: {}
+    };
+    fs.writeFileSync('./cache.json', JSON.stringify(cache));
+    return; 
 }
-
 
 module.exports = () => {};
 module.exports.readyCheck = async (key) => {
@@ -24,16 +31,58 @@ module.exports.api = async (url) => {
     const data = await response.json();
     return(data);
 };
+module.exports.cache = {
+    async user(user) {
+        const twelveHours = 12 * 60 * 60 * 1000;
+        const now = new Date().getTime();
+        let last
+        try {
+            last = new Date(cache.users[user].updated).getTime();
+        } catch {
+            last = new Date(now - twelveHours).getTime();
+        }
+        if (cache.users[user] && (now - last < twelveHours)) {
+            console.debug(`Cache: Hit for ${cache.users[user].name}`)
+            return(cache.users[user]);
+        } else {
+            console.debug(`Cache: Miss for ${user}`)
+            await module.exports.user.basic(user);
+            console.debug(`Cache: Resolved to ${cache.users[user].name}`)
+            return(cache.users[user]);
+        }
+    }
+    //async faction(faction) {},
+    //async company(company) {},
+    //async item(item) {}
+}
 
 module.exports.user = {
     async basic(user) {
         const response = await fetch(`https://api.torn.com/user/${user}?selections=basic&key=${config.torn}`);
         const data = await response.json();
-    return(data);
+        const now = new Date();
+            cache.users[user] = {
+                name: data.name,
+                player_id: data.player_id,
+                level: data.level,
+                gender: data.gender,
+                updated: now.toISOString()
+            };
+        fs.writeFileSync('./cache.json', JSON.stringify(cache));
+        return(data);
     },
     async profile(user) {
         const response = await fetch(`https://api.torn.com/user/${user}?selections=profile&key=${config.torn}`);
         const data = await response.json();
+        const now = new Date();
+            cache.users[user] = {
+                name: data.name,
+                player_id: data.player_id,
+                level: data.level,
+                gender: data.gender,
+                updated: now.toISOString()
+            };
+        fs.writeFileSync('./cache.json', JSON.stringify(cache));
         return(data);
     },
     async stats(user, category, statName) {

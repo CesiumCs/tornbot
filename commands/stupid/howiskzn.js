@@ -15,7 +15,6 @@ module.exports = {
         (KZNKing.faction.position === "Leader") ? message += `He is leader of ${KZNKing.faction.faction_name}. ` : message += `He is not leader of his faction. `;
         
         const company = (await torn.company(KZNKing.job.company_id));
-        console.log(company);
         const jobEmbed = new EmbedBuilder()
             .setTitle(company.name)
             .setURL(`https://www.torn.com/joblist.php#/p=corpinfo&ID=${company.ID}`)
@@ -55,7 +54,6 @@ module.exports = {
                 value: String(company.rating),
                 inline: true
                 }
-
             )
 
         const faction = await torn.faction.basic(KZNKing.faction.faction_id)
@@ -88,10 +86,36 @@ module.exports = {
                     value: `${faction.rank.wins}`,
                     inline: true
                 },
+            );
 
-            )
+        let companyFemales = 0;
+        const companyFemalePromises = Object.entries(company.employees).map(([user]) => {
+            return torn.cache.user(user).then(data => {
+                if (data.gender === "Female") {
+                    companyFemales++;
+                }
+            });
+        });
+            
+        let factionFemales = 0;
+        const factionMembers = await torn.faction.members(KZNKing.faction.faction_id);
+        const factionFemalePromises = factionMembers.map((user) => {
+            return torn.cache.user(user.id).then(data => {
+                if (data.gender === "Female") {
+                    factionFemales++;
+                }
+            });
+        });
 
+        // i hate async
+        await Promise.all(companyFemalePromises);
+        await Promise.all(factionFemalePromises);
 
+        const companyFemalePercent = (companyFemales / company.employees_capacity) * 100;
+        const factionFemalePercent = (factionFemales / faction.capacity) * 100;
+            
+        message += `\nbtw lol his company has ${companyFemales}/${company.employees_capacity} female employees and ${factionFemales}/${faction.capacity} female faction members\n`;
+        message += `thats ${companyFemalePercent.toFixed(2)}% and ${factionFemalePercent.toFixed(2)}% respectively, and last i checked, torn has a 13.43% female population`;
         interaction.reply({ content: message, embeds: [jobEmbed, facEmbed] });
 	},
 };
