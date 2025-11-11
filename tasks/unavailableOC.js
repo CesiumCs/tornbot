@@ -65,8 +65,16 @@ module.exports = async (client, torn, config) => {
             const then = new Date(state.ocAlertLast);
             const twelveHours = 12 * 60 * 60 * 1000;
             if (now.getTime() - then.getTime() > twelveHours) {
+                const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
                 console.debug(`unavailableOC: Sending alert`);
-                channel.send({ embeds: [embed] });
+                const row = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('delete_message')
+                            .setLabel('Click when sorted')
+                            .setStyle(ButtonStyle.Success),
+                    );
+                channel.send({ embeds: [embed], components: [row] });
                 state.ocAlertLast = now.toISOString();
                 fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
             } else { console.debug(`unavailableOC: Would send alert, but one was sent recently`); }

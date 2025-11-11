@@ -81,6 +81,19 @@ const commandFolders = fs.readdirSync(foldersPath);
 }
     
 client.on(Events.InteractionCreate, async interaction => {
+    if (interaction.isButton()) {
+        if (interaction.customId === 'delete_message') {
+            try {
+                await interaction.message.delete();
+                console.debug('Interaction: Deleted message via button.');
+            } catch (error) {
+                console.error('Interaction: Error deleting message:', error);
+                await interaction.reply({ content: 'There was an error trying to delete this message.', ephemeral: true });
+            }
+        }
+        return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
     const command = interaction.client.commands.get(interaction.commandName);
     if (!command) {

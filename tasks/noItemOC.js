@@ -25,8 +25,16 @@ module.exports = async (client, torn, config) => {
         const then = new Date(state.itemAlertLast);
         const twelveHours = 12 * 60 * 60 * 1000;
         if (now.getTime() - then.getTime() > twelveHours) {
+            const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
             console.debug(`unpaidOC: Sending alert`);
-            channel.send(message);
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('delete_message')
+                        .setLabel('Click when sorted')
+                        .setStyle(ButtonStyle.Success),
+                );
+            channel.send({ content: message, components: [row] });
             state.itemAlertLast = now.toISOString();
             fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
         } else { console.debug(`noItemOC: Would send alert, but one was sent recently`); }
