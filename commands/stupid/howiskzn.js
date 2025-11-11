@@ -115,7 +115,7 @@ module.exports = {
         const factionFemalePercent = (factionFemales / faction.capacity) * 100;
             
         message += `\nbtw lol his company has ${companyFemales}/${company.employees_capacity} female employees and ${factionFemales}/${faction.capacity} female faction members\n`;
-        message += `thats ${companyFemalePercent.toFixed(2)}% and ${factionFemalePercent.toFixed(2)}% respectively, and last i checked, torn has a 13.43% female population`;
+        message += `thats ${companyFemalePercent.toFixed(0)}% and ${factionFemalePercent.toFixed(0)}% respectively, and last i checked, torn has a 13% female population`;
         interaction.reply({ content: message, embeds: [jobEmbed, facEmbed] });
 	},
 };
