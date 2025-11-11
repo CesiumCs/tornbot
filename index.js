@@ -4,13 +4,26 @@ const path = require('node:path');
 const torn = require('./torn.js');
 
 let config, state;
-try { 
+try {
+    console.debug("Core: Loading config")
     config = require('./config.json');
-    state = require('./state.json');
 } catch {
-    console.error("Fatal: Unable to load config.json or state.json. Please follow the instructions in README.md");
+    console.error("Fatal: Unable to load config.json. Please follow the instructions in README.md");
     process.exit(1);
 }
+try {
+    console.debug("Core: Loading state")
+    state = require('./state.json');
+} catch {
+    console.log("Core: No state file found, creating one.")
+    state = {
+    "ocAlertLast": "2025-01-01T00:00:00.000Z",
+    "payoutAlertLast": "2025-01-01T00:00:00.000Z",
+    "itemAlertLast": "2025-01-01T00:00:00.000Z"
+    }
+    fs.writeFileSync('./state.json', JSON.stringify(state));
+}
+
 
 // the basic discord setup stuff yoinked from their guide
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, Partials, MessageFlags } = require('discord.js');
