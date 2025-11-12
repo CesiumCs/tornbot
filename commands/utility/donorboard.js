@@ -46,7 +46,7 @@ module.exports = {
                 }
             });
         });;
-        let message = `# Donor Board\n`;
+        let message = `# Donor Board (last ${days} days)\n`;
 
         const sortedBoard = Object.values(board).sort((a, b) => b.totalValue - a.totalValue);
 
