@@ -4,10 +4,10 @@ let cache;
 try {config = require('./config.json')} catch {return}
 try {cache = require('./cache.json')} catch {
     cache = {
-        items: {},
         users: {},
         factions: {},
-        companies: {}
+        companies: {},
+        items: {}
     };
     fs.writeFileSync('./cache.json', JSON.stringify(cache));
     return; 
@@ -42,18 +42,72 @@ module.exports.cache = {
             last = new Date(now - twelveHours).getTime();
         }
         if (cache.users[user] && (now - last < twelveHours)) {
-            console.debug(`Cache: Hit for ${cache.users[user].name}`)
+            console.debug(`Cache: Hit for user ${cache.users[user].name}`)
             return(cache.users[user]);
         } else {
-            console.debug(`Cache: Miss for ${user}`)
+            console.debug(`Cache: Miss for user ${user}`)
             await module.exports.user.basic(user);
-            console.debug(`Cache: Resolved to ${cache.users[user].name}`)
+            console.debug(`Cache: Resolved user ${cache.users[user].name}`)
             return(cache.users[user]);
         }
+    },
+    async faction(faction) {
+        const twelveHours = 12 * 60 * 60 * 1000;
+        const now = new Date().getTime();
+        let last
+        try {
+            last = new Date(cache.factions[faction].updated).getTime();
+        } catch {
+            last = new Date(now - twelveHours).getTime();
+        }
+        if (cache.factions[faction] && (now - last < twelveHours)) {
+            console.debug(`Cache: Hit for faction ${cache.factions[faction].name}`)
+            return(cache.factions[faction]);
+        } else {
+            console.debug(`Cache: Miss for faction ${faction}`)
+            await module.exports.faction.basic(faction);
+            console.debug(`Cache: Resolved faction ${cache.factions[faction].name}`)
+            return(cache.factions[faction]);
+        }
+    },
+    async company(company) {
+        const twelveHours = 12 * 60 * 60 * 1000;
+        const now = new Date().getTime();
+        let last
+        try {
+            last = new Date(cache.companies[company].updated).getTime();
+        } catch {
+            last = new Date(now - twelveHours).getTime();
+        }
+        if (cache.companies[company] && (now - last < twelveHours)) {
+            console.debug(`Cache: Hit for company ${cache.companies[company].name}`)
+            return(cache.companies[company]);
+        } else {
+            console.debug(`Cache: Miss for company ${company}`)
+            await module.exports.company(company);
+            console.debug(`Cache: Resolved company ${cache.companies[company].name}`)
+            return(cache.companies[company]);
+        }
+    },
+    async item(item) {
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        const now = new Date().getTime();
+        let last
+        try {
+            last = new Date(cache.items[item].updated).getTime();
+        } catch {
+            last = new Date(now - sevenDays).getTime();
+        }
+        if (cache.items[item] && (now - last < sevenDays)) {
+            console.debug(`Cache: Hit for item ${cache.items[item].name}`)
+            return(cache.items[item]);
+        } else {
+            console.debug(`Cache: Miss for item ${item}`)
+            await module.exports.item(item);
+            console.debug(`Cache: Resolved item ${cache.items[item].name}`)
+            return(cache.items[item]);
+        }
     }
-    //async faction(faction) {},
-    //async company(company) {},
-    //async item(item) {}
 }
 
 module.exports.user = {
@@ -104,18 +158,28 @@ module.exports.faction = {
         } else {
             response = await fetch(`https://api.torn.com/v2/faction/basic?key=${config.torn}`);
         }
-        const data = await response.json();
-        return(data.basic);
+        const data = (await response.json()).basic;
+        const now = new Date();
+        cache.factions[data.id] = {
+            name: data.name,
+            leader_id: data.leader_id,
+            capacity: data.capacity,
+            rank: data.rank,
+            best_chain: data.best_chain,
+            updated: now.toISOString()
+        };
+        fs.writeFileSync('./cache.json', JSON.stringify(cache));
+        return(data);
     },
     async members(faction) {
         let response
         if (faction) {
-            response = await fetch(`https://api.torn.com/v2/faction/${faction}/members?striptags=true&key=${config.torn}`);
+            response = (await fetch(`https://api.torn.com/v2/faction/${faction}/members?striptags=true&key=${config.torn}`)).members;
         } else {
-            response = await fetch(`https://api.torn.com/v2/faction/members?striptags=true&key=${config.torn}`);
+            response = (await fetch(`https://api.torn.com/v2/faction/members?striptags=true&key=${config.torn}`)).members;
         }
         const data = await response.json();
-        return(data.members);
+        return(data);
     },
     async crimes(category) {
         let response
@@ -135,20 +199,34 @@ module.exports.faction = {
 }
 
 module.exports.company = async (company) => {
-        let response
-        if (company) {
-            response = await fetch(`https://api.torn.com/company/${company}?selections=profile&key=${config.torn}`);
-        } else {
-            response = await fetch(`https://api.torn.com/company/?selections=profile&key=${config.torn}`);
-        }
-            const data = await response.json();
-            return(data.company);
+    let response
+    if (company) {
+        response = await fetch(`https://api.torn.com/company/${company}?selections=profile&key=${config.torn}`);
+    } else {
+        response = await fetch(`https://api.torn.com/company/?selections=profile&key=${config.torn}`);
+    }
+    const data = await response.json();
+    const now = new Date();
+    cache.companies[data.company.ID] = {
+        name: data.company.name,
+        id: data.company.ID,
+        company_type: data.company.company_type,
+        director_id: data.company.director,
+        rating: data.company.rating,
+        updated: now.toISOString()
+     };
+    fs.writeFileSync('./cache.json', JSON.stringify(cache));
+    return(data.company);
 }
 
 module.exports.item = async (item) => {
     const response = await fetch(`https://api.torn.com/v2/torn/${item}/items?sort=ASC&key=${config.torn}`);
     const data = await response.json();
-    return(data);
+    const now = new Date();
+    cache.items[item] = data.items[0];
+    cache.items[item].updated = now.toISOString();
+    fs.writeFileSync('./cache.json', JSON.stringify(cache));
+    return(data.items[0]);
 }
 
 
