@@ -174,12 +174,12 @@ module.exports.faction = {
     async members(faction) {
         let response
         if (faction) {
-            response = (await fetch(`https://api.torn.com/v2/faction/${faction}/members?striptags=true&key=${config.torn}`)).members;
+            response = await fetch(`https://api.torn.com/v2/faction/${faction}/members?striptags=true&key=${config.torn}`);
         } else {
-            response = (await fetch(`https://api.torn.com/v2/faction/members?striptags=true&key=${config.torn}`)).members;
+            response = await fetch(`https://api.torn.com/v2/faction/members?striptags=true&key=${config.torn}`);
         }
         const data = await response.json();
-        return(data);
+        return(data.members);
     },
     async crimes(category) {
         let response
