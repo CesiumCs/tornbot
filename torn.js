@@ -103,7 +103,7 @@ module.exports.cache = {
             return(cache.items[item]);
         } else {
             console.debug(`Cache: Miss for item ${item}`)
-            await module.exports.item(item);
+            await module.exports.item.get(item);
             console.debug(`Cache: Resolved item ${cache.items[item].name}`)
             return(cache.items[item]);
         }
@@ -195,6 +195,11 @@ module.exports.faction = {
         const response = await fetch(`https://api.torn.com/v2/faction/upgrades?key=${config.torn}`);
         const data = await response.json();
         return(data.upgrades);
+    },
+    async news(category, from) {
+        const response = await fetch(`https://api.torn.com/v2/faction/news?striptags=false&limit=100&sort=DESC&from=${from}&cat=${category}&key=${config.torn}`)
+        const data = await response.json();
+        return(data.news);
     }
 }
 
@@ -228,6 +233,38 @@ module.exports.item = async (item) => {
     fs.writeFileSync('./cache.json', JSON.stringify(cache));
     return(data.items[0]);
 }
+module.exports.item.lookup = async (itemName) => {
+    console.debug(`Torn: Looking up item ${itemName}`)
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    const now = new Date().getTime();
+
+    for (const itemId in cache.items) {
+        if (cache.items[itemId].name === itemName) {
+            let last = new Date(cache.items[itemId].updated).getTime();
+            if (now - last < thirtyDays) {
+                console.debug(`Cache: Hit for item ${cache.items[itemId].name}`);
+                return cache.items[itemId];
+            }
+        }
+    }
+
+    console.debug(`Cache: Miss for item ${itemName}`);
+    const response = await fetch(`https://api.torn.com/v2/torn/items?cat=All&sort=ASC&key=${config.torn}`);
+    const data = await response.json();
+    let target;
+    data.items.forEach(item => {
+        if (item.name === itemName) {
+            console.debug(`Torn: Found item ${item.name} as ${item.id}`)
+            target = item;
+        }
+    });
+    if (target) {
+        cache.items[target.id] = target;
+        cache.items[target.id].updated = new Date().toISOString();
+        fs.writeFileSync('./cache.json', JSON.stringify(cache));
+    }
+    return(target);
+};
 
 
 module.exports.self = {
