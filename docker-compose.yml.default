@@ -5,3 +5,4 @@ services:
     volumes:
       - ./config.json:/usr/src/bot/config.json
       - ./state.json:/usr/src/bot/state.json
+      - ./cache.json:/usr/src/bot/cache.json
