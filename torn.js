@@ -103,7 +103,7 @@ module.exports.cache = {
             return(cache.items[item]);
         } else {
             console.debug(`Cache: Miss for item ${item}`)
-            await module.exports.item.get(item);
+            await module.exports.item(item);
             console.debug(`Cache: Resolved item ${cache.items[item].name}`)
             return(cache.items[item]);
         }
