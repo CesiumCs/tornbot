@@ -146,8 +146,24 @@ module.exports = {
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
 
+        // rounded corners, if you think i wouldnt have an ai do this for me youre silly
+        const cornerRadius = 24;
         ctx.fillStyle = '#0A2472';
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        (function roundedRect(ctx, x, y, w, h, r) {
+            const radius = Math.max(0, Math.min(r, Math.min(w / 2, h / 2)));
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+        })(ctx, 0, 0, canvasWidth, canvasHeight, cornerRadius);
 
         ctx.textBaseline = 'top';
 
