@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const torn = require('../../torn.js');
+const config = require('../../config.json');
 const fs = require('fs');
 const path = require('path');
 // eslint-disable-next-line no-unused-vars
@@ -79,11 +80,11 @@ module.exports = {
         }
 
         const baseColors = {
-            core: '#FFFFFF',
-            peace: '#FFFFFF',
-            peaceDim: '#AAAAAA',
-            war: '#FFFFFF',
-            warDim: '#AAAAAA'
+            core: config.upgradeColors.core,
+            peace: config.upgradeColors.peace,
+            peaceDim: config.upgradeColors.peaceDim,
+            war: config.upgradeColors.war,
+            warDim: config.upgradeColors.warDim
         };
 
 
@@ -148,7 +149,7 @@ module.exports = {
 
         // rounded corners, if you think i wouldnt have an ai do this for me youre silly
         const cornerRadius = 24;
-        ctx.fillStyle = '#0A2472';
+        ctx.fillStyle = config.upgradeColors.background;
         (function roundedRect(ctx, x, y, w, h, r) {
             const radius = Math.max(0, Math.min(r, Math.min(w / 2, h / 2)));
             ctx.beginPath();
@@ -177,7 +178,7 @@ module.exports = {
             y += vln.lineHeight;
         }
 
-        const outDir = path.resolve(__dirname, '..', '..', 'public', 'images');
+        const outDir = path.resolve(__dirname, '..', '..', 'public');
         fs.mkdirSync(outDir, { recursive: true });
 
         const outFile = path.join(outDir, 'upgrades.png');
