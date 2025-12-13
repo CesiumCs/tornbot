@@ -86,7 +86,7 @@ const commandFolders = fs.readdirSync(foldersPath);
 // On client ready, generate upgrades image if missing or on first run
 client.on(Events.ClientReady, async () => {
     try {
-        const imgDir = path.resolve(__dirname, 'public', 'images');
+        const imgDir = path.resolve(__dirname, 'public');
         if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
         const imgPath = path.join(imgDir, 'upgrades.png');
         if (stateWasCreated || !fs.existsSync(imgPath)) {
