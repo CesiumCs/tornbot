@@ -17,7 +17,7 @@ module.exports = {
 
         // Build lines with group metadata (core / peace / war)
         const lines = []; // { text: string, group: 'core'|'peace'|'war'|null }
-        lines.push({ text: 'Core Upgrades:', group: 'core' });
+        lines.push({ text: 'Core Upgrades', group: 'core' });
         let armoryNames = [];
         for (const upgrade of data.upgrades.core.upgrades) {
             if (upgrade.name && String(upgrade.name).toLowerCase().includes('armory')) {
@@ -31,7 +31,7 @@ module.exports = {
         }
         lines.push({ text: '', group: null });
 
-        lines.push({ text: 'Peace Upgrades:', group: 'peace' });
+        lines.push({ text: 'Peace Upgrades', group: 'peace' });
         for (const branch of data.upgrades.peace) {
             lines.push({ text: `  ${branch.name}`, group: 'peace' });
             for (const upgrade of branch.upgrades) {
@@ -40,7 +40,7 @@ module.exports = {
         }
         lines.push({ text: '', group: null });
 
-        lines.push({ text: 'War Upgrades:', group: 'war' });
+        lines.push({ text: 'War Upgrades', group: 'war' });
         for (const branch of data.upgrades.war) {
             lines.push({ text: `  ${branch.name}`, group: 'war' });
             for (const upgrade of branch.upgrades) {
@@ -53,7 +53,6 @@ module.exports = {
         const maxWidth = 1100;
         const fontSize = 18;
         const fontFamily = 'Sans';
-        const lineHeight = Math.round(fontSize * 1.4);
         const fontSpec = `${fontSize}px ${fontFamily}`;
 
         // Temporary canvas for measurement
@@ -112,24 +111,35 @@ module.exports = {
             }
         }
 
-        // Wrap and measure lines while preserving group
-        let visualLines = []; // { text, group }
+        // Wrap and measure lines while preserving group and level
+        const fontSizes = { 0: 28, 1: 24, 2: 20 };
+        const lineHeightFactor = 1.3;
+
+        let visualLines = []; // { text, group, level, fontSize, lineHeight }
         let measuredMaxWidth = 0;
         const textMaxWidth = maxWidth - padding * 2;
         for (const ln of lines) {
             if (!ln.text) {
-                visualLines.push({ text: '', group: null });
+                visualLines.push({ text: '', group: null, level: 0, fontSize: fontSizes[0], lineHeight: Math.round(fontSizes[0] * lineHeightFactor) });
                 continue;
             }
-            const wrapped = wrapLine(measureCtx, ln.text, textMaxWidth);
+
+            const leading = (ln.text.match(/^ */) || [''])[0].length;
+            const level = Math.min(2, Math.floor(leading / 2));
+            const rawText = ln.text.trim();
+            const fsz = fontSizes[level] || fontSize;
+
+            measureCtx.font = `${fsz}px ${fontFamily}`;
+            const wrapped = wrapLine(measureCtx, rawText, textMaxWidth);
             for (const wln of wrapped) {
-                visualLines.push({ text: wln, group: ln.group });
-                measuredMaxWidth = Math.max(measuredMaxWidth, Math.ceil(measureCtx.measureText(wln).width));
+                const w = Math.ceil(measureCtx.measureText(wln).width);
+                visualLines.push({ text: wln, group: ln.group, level, fontSize: fsz, lineHeight: Math.round(fsz * lineHeightFactor) });
+                measuredMaxWidth = Math.max(measuredMaxWidth, w);
             }
         }
 
         const canvasWidth = Math.min(maxWidth, measuredMaxWidth + padding * 2);
-        const canvasHeight = padding * 2 + visualLines.length * lineHeight;
+        const canvasHeight = padding * 2 + visualLines.reduce((sum, l) => sum + l.lineHeight, 0);
 
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
@@ -137,14 +147,16 @@ module.exports = {
         ctx.fillStyle = '#0A2472';
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-        ctx.font = fontSpec;
         ctx.textBaseline = 'top';
 
         let y = padding;
         for (const vln of visualLines) {
+            ctx.font = `${vln.fontSize}px ${fontFamily}`;
             ctx.fillStyle = colorForGroup(vln.group);
-            ctx.fillText(vln.text, padding, y);
-            y += lineHeight;
+            const textWidth = Math.ceil(ctx.measureText(vln.text).width);
+            const x = Math.round((canvasWidth - textWidth) / 2);
+            ctx.fillText(vln.text, x, y);
+            y += vln.lineHeight;
         }
 
         const outDir = path.resolve(__dirname, '..', '..', 'public', 'images');
