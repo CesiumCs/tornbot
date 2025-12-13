@@ -112,7 +112,7 @@ module.exports = {
         }
 
         // Wrap and measure lines while preserving group and level
-        const fontSizes = { 0: 26, 1: 22, 2: 18 };
+        const fontSizes = { 0: 24, 1: 20, 2: 16 };
         const lineHeightFactor = 1.3;
 
         let visualLines = []; // { text, group, level, fontSize, lineHeight }
