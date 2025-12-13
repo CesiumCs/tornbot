@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('node:path');
 const torn = require('./torn.js');
+const express = require('express');
 
 let config, state;
 try {
@@ -153,4 +154,39 @@ client.on(Events.MessageCreate, message => {
             } else console.log("Chat: Unable to resolve profile")
         });
     }
+});
+
+// ensure public folder exists
+const publicDir = path.resolve(__dirname, 'public');
+fs.mkdirSync(publicDir, { recursive: true });
+
+// load optional config.json (use httpPort) or PORT env var
+let cfg = {};
+const cfgPath = path.resolve(__dirname, 'config.json');
+if (fs.existsSync(cfgPath)) {
+    // eslint-disable-next-line no-unused-vars
+    try { cfg = require(cfgPath); } catch (e) { /* ignore */ }
+}
+const port = process.env.PORT || cfg.httpPort || 3000;
+
+// create simple static server
+const app = express();
+app.use(express.static(publicDir));
+
+// convenience routes
+app.get('/upgrades.png', (req, res) => {
+    const imgPath = path.join(publicDir, 'images', 'upgrades.png');
+    if (fs.existsSync(imgPath)) return res.sendFile(imgPath);
+    res.status(404).send('Not found');
+});
+
+app.get('/images', (req, res) => {
+    const imgDir = path.join(publicDir, 'images');
+    if (!fs.existsSync(imgDir)) return res.status(404).send('No images');
+    const files = fs.readdirSync(imgDir).filter(f => /\.(png|jpe?g|gif)$/i.test(f));
+    res.send(`<pre>${files.join('\n')}</pre>`);
+});
+
+app.listen(port, () => {
+    console.log(`Static server running: http://localhost:${port}/ (serving ${publicDir})`);
 });

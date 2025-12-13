@@ -194,7 +194,7 @@ module.exports.faction = {
     async upgrades() {
         const response = await fetch(`https://api.torn.com/v2/faction/upgrades?key=${config.torn}`);
         const data = await response.json();
-        return(data.upgrades);
+        return(data);
     },
     async news(category, from) {
         const response = await fetch(`https://api.torn.com/v2/faction/news?striptags=false&limit=100&sort=DESC&from=${from}&cat=${category}&key=${config.torn}`)
