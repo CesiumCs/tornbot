@@ -5,6 +5,7 @@ const torn = require('./torn.js');
 const express = require('express');
 
 let config, state;
+let stateWasCreated = false;
 try {
     console.debug("Core: Loading config")
     config = require('./config.json');
@@ -23,6 +24,7 @@ try {
     "itemAlertLast": "2025-01-01T00:00:00.000Z"
     }
     fs.writeFileSync('./state.json', JSON.stringify(state));
+    stateWasCreated = true;
 }
 
 
@@ -80,6 +82,33 @@ const commandFolders = fs.readdirSync(foldersPath);
         }
     }
 }
+
+// On client ready, generate upgrades image if missing or on first run
+client.on(Events.ClientReady, async () => {
+    try {
+        const imgDir = path.resolve(__dirname, 'public', 'images');
+        if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+        const imgPath = path.join(imgDir, 'upgrades.png');
+        if (stateWasCreated || !fs.existsSync(imgPath)) {
+            const cmd = client.commands.get('updateupgrades');
+            if (cmd && typeof cmd.execute === 'function') {
+                console.debug('Startup: Generating upgrades image (missing or first run)');
+                const mockInteraction = {
+                    deferReply: async () => {},
+                    editReply: async () => {}
+                };
+                try {
+                    await cmd.execute(mockInteraction);
+                    console.debug('Startup: upgrades image generation complete');
+                } catch (err) {
+                    console.error('Startup: failed to generate upgrades image', err);
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Startup: error while ensuring upgrades image', err);
+    }
+});
     
 client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isButton()) {
