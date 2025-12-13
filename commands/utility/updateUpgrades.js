@@ -15,33 +15,36 @@ module.exports = {
 
         const data = await torn.faction.upgrades();
 
-        const lines = [];
-        lines.push("Core Upgrades:");
+        // Build lines with group metadata (core / peace / war)
+        const lines = []; // { text: string, group: 'core'|'peace'|'war'|null }
+        lines.push({ text: 'Core Upgrades:', group: 'core' });
         let armoryNames = [];
         for (const upgrade of data.upgrades.core.upgrades) {
             if (upgrade.name && String(upgrade.name).toLowerCase().includes('armory')) {
                 armoryNames.push(upgrade.name.replace(/\s+armory$/i, ''));
             } else {
-                lines.push(`  ${upgrade.name} - ${upgrade.ability}`);
+                lines.push({ text: `  ${upgrade.name} - ${upgrade.ability}`, group: 'core' });
             }
         }
         if (armoryNames.length) {
-            lines.push(`  Armory: ${armoryNames.join(', ')}`);
+            lines.push({ text: `  Armory: ${armoryNames.join(', ')}`, group: 'core' });
         }
-        lines.push("");
-        lines.push("Peace Upgrades:");
+        lines.push({ text: '', group: null });
+
+        lines.push({ text: 'Peace Upgrades:', group: 'peace' });
         for (const branch of data.upgrades.peace) {
-            lines.push(`  ${branch.name}`);
+            lines.push({ text: `  ${branch.name}`, group: 'peace' });
             for (const upgrade of branch.upgrades) {
-                lines.push(`    ${upgrade.name} - ${upgrade.ability}`);
+                lines.push({ text: `    ${upgrade.name} - ${upgrade.ability}`, group: 'peace' });
             }
         }
-        lines.push("");
-        lines.push("War Upgrades:");
+        lines.push({ text: '', group: null });
+
+        lines.push({ text: 'War Upgrades:', group: 'war' });
         for (const branch of data.upgrades.war) {
-            lines.push(`  ${branch.name}`);
+            lines.push({ text: `  ${branch.name}`, group: 'war' });
             for (const upgrade of branch.upgrades) {
-                lines.push(`    ${upgrade.name} - ${upgrade.ability}`);
+                lines.push({ text: `    ${upgrade.name} - ${upgrade.ability}`, group: 'war' });
             }
         }
 
@@ -76,17 +79,51 @@ module.exports = {
             return wrapped;
         }
 
-        let visualLines = [];
+        const baseColors = {
+            core: '#FFFFFF',
+            peace: '#FFFFFF',
+            peaceDim: '#AAAAAA',
+            war: '#FFFFFF',
+            warDim: '#AAAAAA'
+        };
+
+
+        const state = (data.state || '').toLowerCase();
+        let dimMode = 'desaturate'; 
+        let inactiveGroup = null;
+        if (state === 'peace') {
+            dimMode = 'opacity';
+            inactiveGroup = 'war';
+        } else if (state === 'war') {
+            dimMode = 'opacity';
+            inactiveGroup = 'peace';
+        }
+
+        function colorForGroup(group) {
+            if (!group) return '#ffffff';
+            if (group === 'core') return baseColors.core;
+
+            if (dimMode === 'opacity') {
+                if (group === inactiveGroup) return group === 'peace' ? baseColors.peaceDim : baseColors.warDim;
+                return group === 'peace' ? baseColors.peace : baseColors.war;
+            } else {
+                // fallback darker variants when state is unknown
+                return group === 'peace' ? baseColors.peaceDim : baseColors.warDim;
+            }
+        }
+
+        // Wrap and measure lines while preserving group
+        let visualLines = []; // { text, group }
         let measuredMaxWidth = 0;
         const textMaxWidth = maxWidth - padding * 2;
         for (const ln of lines) {
-            if (!ln) {
-                visualLines.push('');
+            if (!ln.text) {
+                visualLines.push({ text: '', group: null });
                 continue;
             }
-            const wrapped = wrapLine(measureCtx, ln, textMaxWidth);
+            const wrapped = wrapLine(measureCtx, ln.text, textMaxWidth);
             for (const wln of wrapped) {
-                visualLines.push(wln);
+                visualLines.push({ text: wln, group: ln.group });
                 measuredMaxWidth = Math.max(measuredMaxWidth, Math.ceil(measureCtx.measureText(wln).width));
             }
         }
@@ -101,12 +138,12 @@ module.exports = {
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
         ctx.font = fontSpec;
-        ctx.fillStyle = '#ffffff';
         ctx.textBaseline = 'top';
 
         let y = padding;
         for (const vln of visualLines) {
-            ctx.fillText(vln, padding, y);
+            ctx.fillStyle = colorForGroup(vln.group);
+            ctx.fillText(vln.text, padding, y);
             y += lineHeight;
         }
 
