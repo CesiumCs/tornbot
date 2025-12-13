@@ -112,7 +112,7 @@ module.exports = {
         }
 
         // Wrap and measure lines while preserving group and level
-        const fontSizes = { 0: 24, 1: 20, 2: 16 };
+        const fontSizes = { 0: 26, 1: 22, 2: 18 };
         const lineHeightFactor = 1.3;
 
         let visualLines = []; // { text, group, level, fontSize, lineHeight }
@@ -125,7 +125,9 @@ module.exports = {
             }
 
             const leading = (ln.text.match(/^ */) || [''])[0].length;
-            const level = Math.min(2, Math.floor(leading / 2));
+            let level = Math.min(2, Math.floor(leading / 2));
+            // Use smallest font size for core upgrade list items (they are indented)
+            if (ln.group === 'core' && level === 1) level = 2;
             const rawText = ln.text.trim();
             const fsz = fontSizes[level] || fontSize;
 
