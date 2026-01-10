@@ -6,7 +6,7 @@ module.exports = async (client, torn, config) => {
     const state = require('../state.json');
 
     let factionMaxCrime = 0;
-    const crimeLevel = (await torn.faction.upgrades()).core.upgrades.find(upgrade => upgrade.name.startsWith("Organized Crimes")).level
+    const crimeLevel = (await torn.faction.upgrades()).upgrades.core.upgrades.find(upgrade => upgrade.name.startsWith("Organized Crimes")).level
     switch (crimeLevel) {
         case 1:
             factionMaxCrime = 2
@@ -54,7 +54,7 @@ module.exports = async (client, torn, config) => {
                     value: `Nobody can sign up for ${difficulty.name} crimes!`
                 })
             } else {
-                    embed.addFields({
+                embed.addFields({
                     name: `Difficulty ${difficulty.name}`,
                     value: `There are ${difficulty.count} ${difficulty.name} crimes!`
                 })
@@ -76,15 +76,15 @@ module.exports = async (client, torn, config) => {
                     );
                 channel.send({ embeds: [embed], components: [row] });
                 state.ocAlertLast = now.toISOString();
-                fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
+                fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => { if (err) { console.error(err) } });
             } else { console.debug(`unavailableOC: Would send alert, but one was sent recently`); }
         } else {
             console.debug(`unavailableOC: All crimes available, not sending alert`);
             const now = new Date();
             const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             state.ocAlertLast = twentyFourHoursAgo.toISOString();
-            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
-            
+            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => { if (err) { console.error(err) } });
+
         }
     });
 };
