@@ -6,7 +6,7 @@ module.exports = async (client, torn, config) => {
     const now = new Date();
     const state = require('../state.json');
     let embeds = [];
-    const data = await torn.api(`https://api.torn.com/v2/faction/crimes?cat=successful&from=${now.getTime() / 1000 - 7 * 24 * 60 * 60}&sort=DESC`);
+    const data = { crimes: await torn.faction.crimes({ category: 'successful', from: now.getTime() / 1000 - 7 * 24 * 60 * 60, sort: 'DESC' }) };
     for (const crime of data.crimes) {
         if (!crime.rewards.payout) {
             console.debug(`unpaidOC: Found unpaid crime: ${crime.name}:${crime.id}`);
@@ -31,7 +31,7 @@ module.exports = async (client, torn, config) => {
                 });
                 embed.setDescription(items);
             }
-            const profilePromises = crime.slots.map(slot => 
+            const profilePromises = crime.slots.map(slot =>
                 torn.user.profile(slot.user.id).then(profile => ({
                     name: profile.name,
                     value: `Pass rate: ${slot.checkpoint_pass_rate}`,
@@ -56,17 +56,17 @@ module.exports = async (client, torn, config) => {
                         .setLabel('Click when sorted')
                         .setStyle(ButtonStyle.Success),
                 );
-            channel.send({content: "# Unpaid Faction Crimes:", embeds: embeds, components: [row] });
+            channel.send({ content: "# Unpaid Faction Crimes:", embeds: embeds, components: [row] });
             state.payoutAlertLast = now.toISOString();
-            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
+            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => { if (err) { console.error(err) } });
         } else { console.debug(`unpaidOC: Would send alert, but one was sent recently`); }
     } else {
-            console.debug(`unpaidOC: All crimes are paid, not sending alert`);
-            const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            state.payoutAlertLast = twentyFourHoursAgo.toISOString();
-            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
-            
-        }
+        console.debug(`unpaidOC: All crimes are paid, not sending alert`);
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        state.payoutAlertLast = twentyFourHoursAgo.toISOString();
+        fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => { if (err) { console.error(err) } });
+
+    }
 };
 
 module.exports.schedule = '0 * * * *';

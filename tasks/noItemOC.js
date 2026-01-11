@@ -4,7 +4,7 @@ module.exports = async (client, torn, config) => {
     const channel = client.channels.resolve(config.channels.ocAlert);
     const now = new Date();
     const state = require('../state.json');
-    const data = await torn.api(`https://api.torn.com/v2/faction/crimes?cat=planning&sort=DESC`);
+    const data = { crimes: await torn.faction.crimes({ category: 'planning', sort: 'DESC' }) };
     let itemsneeded = 0;
     let message = "OCs with unavailable items:\n";
     for (const crime of data.crimes) {
@@ -36,15 +36,15 @@ module.exports = async (client, torn, config) => {
                 );
             channel.send({ content: message, components: [row] });
             state.itemAlertLast = now.toISOString();
-            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
+            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => { if (err) { console.error(err) } });
         } else { console.debug(`noItemOC: Would send alert, but one was sent recently`); }
     } else {
-            console.debug(`noItemOC: Nobody needs items, not sending alert`);
-            const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            state.itemAlertLast = twentyFourHoursAgo.toISOString();
-            fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => {if (err) {console.error(err)}});
-            
-        }
+        console.debug(`noItemOC: Nobody needs items, not sending alert`);
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        state.itemAlertLast = twentyFourHoursAgo.toISOString();
+        fs.writeFile('./state.json', JSON.stringify(state, null, 4), err => { if (err) { console.error(err) } });
+
+    }
 };
 
 module.exports.schedule = '45 * * * *';

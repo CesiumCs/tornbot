@@ -40,7 +40,8 @@ module.exports = async (client, torn, config) => {
 
     let embed = new EmbedBuilder()
         .setTitle('Crime Availability Check')
-    await torn.api(`https://api.torn.com/v2/faction/crimes?cat=recruiting&offset=0&sort=DESC`).then(data => {
+    await torn.faction.crimes({ category: 'recruiting', offset: 0, sort: 'DESC' }).then(crimeList => {
+        const data = { crimes: crimeList };
         data.crimes.forEach(crime => {
             crimes.difficulty[crime.difficulty - 1].count++
         });
