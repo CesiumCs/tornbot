@@ -4,15 +4,16 @@
     "alerts": "YOUR DISCORD USER ID",
     "torn": "TORN API KEY",
     "httpPort": 3000,
+    "taskWaitMinutes": 5,
     "channels": {
         "ocAlert": "000000000000000000"
     },
     "upgradeColors": {
-            "core": "#FFFFFF",
-            "peace": "#FFFFFF",
-            "peaceDim": "#AAAAAA",
-            "war": "#FFFFFF",
-            "warDim": "#AAAAAA",
-            "background": "#0A2472"
+        "core": "#FFFFFF",
+        "peace": "#FFFFFF",
+        "peaceDim": "#AAAAAA",
+        "war": "#FFFFFF",
+        "warDim": "#AAAAAA",
+        "background": "#0A2472"
     }
 }

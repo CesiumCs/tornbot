@@ -1,12 +1,17 @@
 module.exports = async (client, torn, config) => {
-    console.debug("Task: Executing unpaidOC");
+
     const { EmbedBuilder } = require('discord.js');
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
     const now = new Date();
     const state = require('../state.json');
     let embeds = [];
-    const data = { crimes: await torn.faction.crimes({ category: 'successful', from: now.getTime() / 1000 - 7 * 24 * 60 * 60, sort: 'DESC' }) };
+    const crimesList = await torn.faction.crimes({ category: 'successful', from: now.getTime() / 1000 - 7 * 24 * 60 * 60, sort: 'DESC' });
+    if (!crimesList) {
+        console.error("unpaidOC: API returned no crimes.");
+        return;
+    }
+    const data = { crimes: crimesList };
     for (const crime of data.crimes) {
         if (!crime.rewards.payout) {
             console.debug(`unpaidOC: Found unpaid crime: ${crime.name}:${crime.id}`);

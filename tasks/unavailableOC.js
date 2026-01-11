@@ -1,5 +1,5 @@
 module.exports = async (client, torn, config) => {
-    console.debug("Task: Executing unavailableOC");
+
     const { EmbedBuilder } = require('discord.js');
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
@@ -41,6 +41,10 @@ module.exports = async (client, torn, config) => {
     let embed = new EmbedBuilder()
         .setTitle('Crime Availability Check')
     await torn.faction.crimes({ category: 'recruiting', offset: 0, sort: 'DESC' }).then(crimeList => {
+        if (!crimeList) {
+            console.error("unavailableOC: API returned no crimes.");
+            return;
+        }
         const data = { crimes: crimeList };
         data.crimes.forEach(crime => {
             crimes.difficulty[crime.difficulty - 1].count++

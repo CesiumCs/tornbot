@@ -1,5 +1,5 @@
 module.exports = async (client, torn, config) => {
-    console.debug("Task: Executing noItemOC");
+
     const fs = require('fs');
     const channel = client.channels.resolve(config.channels.ocAlert);
     const now = new Date();

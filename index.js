@@ -1,4 +1,4 @@
-const cron = require('node-cron');
+
 const fs = require('fs');
 const path = require('node:path');
 const torn = require('./torn.js');
@@ -19,9 +19,9 @@ try {
 } catch {
     console.log("Core: No state file found, creating one.")
     state = {
-    "ocAlertLast": "2025-01-01T00:00:00.000Z",
-    "payoutAlertLast": "2025-01-01T00:00:00.000Z",
-    "itemAlertLast": "2025-01-01T00:00:00.000Z"
+        "ocAlertLast": "2025-01-01T00:00:00.000Z",
+        "payoutAlertLast": "2025-01-01T00:00:00.000Z",
+        "itemAlertLast": "2025-01-01T00:00:00.000Z"
     }
     fs.writeFileSync('./state.json', JSON.stringify(state));
     stateWasCreated = true;
@@ -32,18 +32,18 @@ try {
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, Partials, MessageFlags } = require('discord.js');
 const client = new Client({
     intents: [
-        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.DirectMessages, 
+        GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent
     ],
     partials: [
         Partials.Channel,
         Partials.Message
-      ]
+    ]
 });
 client.once(Events.ClientReady, readyClient => {
-	console.log(`Discord: Connected as ${readyClient.user.tag}`);
+    console.log(`Discord: Connected as ${readyClient.user.tag}`);
     torn.readyCheck(config.torn);
 });
 client.login(config.token);
@@ -52,23 +52,50 @@ client.tasks = {};
 
 fs.readdir('./tasks/', (err, files) => {
     if (err) return console.log(err);
+    const taskNames = [];
     files.forEach(file => {
         const taskFile = require(`./tasks/${file}`);
         const taskName = file.split('.')[0];
         client.tasks[taskName] = taskFile;
-        if (taskFile.schedule) {
-            console.debug(`Tasks: Scheduling "${taskName}" for ${taskFile.schedule}`);
-            cron.schedule(taskFile.schedule, () => { taskFile(client, torn, config, state); });
-        } else {
-            console.debug(`Tasks: Registered "${taskName}"`);
-        }
+        taskNames.push(taskName);
+        console.debug(`Tasks: Registered "${taskName}"`);
     });
+
+    // Round-robin scheduler
+    let currentTaskIndex = 0;
+    const runNextTask = () => {
+        if (taskNames.length === 0) return;
+
+        const taskName = taskNames[currentTaskIndex];
+        const taskFile = client.tasks[taskName];
+        const now = new Date();
+        const dateString = now.toLocaleTimeString('en-US', { hour12: false }) + ' ' + now.toLocaleDateString('en-US');
+
+        try {
+            console.debug(`Tasks: Executing "${taskName}" at ${dateString}`);
+            taskFile(client, torn, config, state);
+        } catch (error) {
+            console.error(`Tasks: Error executing "${taskName}" at ${dateString}:`, error);
+        }
+
+        currentTaskIndex = (currentTaskIndex + 1) % taskNames.length;
+
+        const waitMinutes = config.taskWaitMinutes || 5;
+        setTimeout(runNextTask, waitMinutes * 60 * 1000);
+    };
+
+    // Start the loop with an initial delay
+    if (taskNames.length > 0) {
+        const waitMinutes = config.taskWaitMinutes || 5;
+        console.log(`Tasks: Scheduler started. First task will run in ${waitMinutes} minutes.`);
+        setTimeout(runNextTask, waitMinutes * 60 * 1000);
+    }
 });
 
 // discord command stuff also yoinked
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
-  for (const folder of commandFolders) {
+for (const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
     for (const file of commandFiles) {
@@ -94,8 +121,8 @@ client.on(Events.ClientReady, async () => {
             if (cmd && typeof cmd.execute === 'function') {
                 console.debug('Startup: Generating upgrades image (missing or first run)');
                 const mockInteraction = {
-                    deferReply: async () => {},
-                    editReply: async () => {}
+                    deferReply: async () => { },
+                    editReply: async () => { }
                 };
                 try {
                     await cmd.execute(mockInteraction);
@@ -109,7 +136,7 @@ client.on(Events.ClientReady, async () => {
         console.error('Startup: error while ensuring upgrades image', err);
     }
 });
-    
+
 client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === 'delete_message') {

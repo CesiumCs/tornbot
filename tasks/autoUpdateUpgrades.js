@@ -1,5 +1,5 @@
 module.exports = async (client, torn, config) => {
-    console.debug("Task: Executing autoUpdateUpgrades");
+
     const fs = require('fs');
     const path = require('path');
     const renderer = require('../utils/UpgradeRenderer.js');

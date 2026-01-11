@@ -97,7 +97,11 @@ async function getCached(collectionName, id, fetchFn, ttl) {
 async function fetchApi(path) {
     const glue = path.includes('?') ? '&' : '?';
     const response = await fetch(`${path}${glue}key=${config.torn}`);
-    return response.json();
+    const data = await response.json();
+    if (data.error) {
+        console.error(`Torn API Error on ${path}:`, JSON.stringify(data.error));
+    }
+    return data;
 }
 
 const api = {
@@ -199,12 +203,12 @@ const api = {
         },
         async crimes(options = {}) {
             let params = new URLSearchParams();
-            let category = '';
+
 
             if (typeof options === 'string') {
-                category = options;
+                params.append('cat', options);
             } else {
-                if (options.category) category = options.category;
+                if (options.category) params.append('cat', options.category);
                 if (options.from) params.append('from', options.from);
                 if (options.to) params.append('to', options.to);
                 if (options.limit) params.append('limit', options.limit);
@@ -213,7 +217,7 @@ const api = {
                 if (options.initiator) params.append('initiator', options.initiator);
             }
 
-            const endpoint = category ? `https://api.torn.com/v2/faction/crimes/${category}` : `https://api.torn.com/v2/faction/crimes`;
+            const endpoint = `https://api.torn.com/v2/faction/crimes`;
             const queryString = params.toString() ? `?${params.toString()}` : '';
 
             const data = await fetchApi(`${endpoint}${queryString}`);
