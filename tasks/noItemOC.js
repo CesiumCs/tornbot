@@ -4,7 +4,12 @@ module.exports = async (client, torn, config) => {
     const channel = client.channels.resolve(config.channels.ocAlert);
     const now = new Date();
     const state = require('../state.json');
-    const data = { crimes: await torn.faction.crimes({ category: 'planning', sort: 'DESC' }) };
+    const crimesList = await torn.faction.crimes({ category: 'planning', sort: 'DESC' });
+    if (!crimesList) {
+        console.error("noItemOC: API returned no crimes (check permissions/key?)");
+        return;
+    }
+    const data = { crimes: crimesList };
     let itemsneeded = 0;
     let message = "OCs with unavailable items:\n";
     for (const crime of data.crimes) {
