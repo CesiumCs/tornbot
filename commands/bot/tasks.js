@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -8,7 +8,7 @@ module.exports = {
 		const taskNames = Object.keys(interaction.client.tasks);
 
 		if (taskNames.length === 0) {
-			await interaction.reply({ content: 'No tasks found.', ephemeral: true });
+			await interaction.reply({ content: 'No tasks found.', flags: MessageFlags.Ephemeral });
 			return;
 		}
 
@@ -17,6 +17,6 @@ module.exports = {
 			.setTitle('Available Tasks')
 			.setDescription(taskNames.map(name => `- ${name}`).join('\n'));
 
-		await interaction.reply({ embeds: [embed], ephemeral: true });
+		await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 	},
 };
