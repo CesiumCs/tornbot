@@ -7,8 +7,8 @@ module.exports = {
         .setDescription('Calculate war payout based on participation')
         .addIntegerOption(option =>
             option.setName('total')
-                .setDescription('Full war earnings total before cuts')
-                .setRequired(true))
+                .setDescription('Full war earnings total before cuts (Optional)')
+                .setRequired(false))
         .addIntegerOption(option =>
             option.setName('percentage')
                 .setDescription('Percentage of leader cut (default 10)'))
@@ -21,13 +21,9 @@ module.exports = {
                     { name: 'Attack Based', value: 'attacks' },
                 )),
     async execute(interaction) {
-        const total = interaction.options.getInteger('total');
+        let total = interaction.options.getInteger('total');
         const percentage = interaction.options.getInteger('percentage') ?? 10;
         const method = interaction.options.getString('method') ?? 'flat';
-
-        // Calculate cuts
-        const leaderCut = Math.ceil(total * (percentage / 100));
-        const pool = total - leaderCut;
 
         await interaction.deferReply();
 
@@ -43,6 +39,39 @@ module.exports = {
             if (!ourFaction) {
                 return interaction.editReply('Could not find our faction in the last war report.');
             }
+
+            // Auto-calculate total if not provided
+            if (!total) {
+                let calculatedTotal = 0;
+                const rewards = ourFaction.rewards;
+
+                if (rewards && rewards.items) {
+                    const itemIds = Array.isArray(rewards.items)
+                        ? rewards.items.map(i => i.id || i.ID)
+                        : Object.keys(rewards.items);
+
+                    for (const itemId of itemIds) {
+                        const qt = Array.isArray(rewards.items)
+                            ? rewards.items.find(i => (i.id == itemId || i.ID == itemId)).quantity
+                            : rewards.items[itemId];
+
+                        const itemData = await torn.item(itemId);
+                        if (itemData && itemData.value && itemData.value.market_price) {
+                            calculatedTotal += itemData.value.market_price * qt;
+                        }
+                    }
+                }
+
+                if (calculatedTotal > 0) {
+                    total = calculatedTotal;
+                } else {
+                    return interaction.editReply('No total provided and could not calculate rewards from the war report.');
+                }
+            }
+
+            // Calculate cuts
+            const leaderCut = Math.ceil(total * (percentage / 100));
+            const pool = total - leaderCut;
 
             const members = ourFaction.members;
             const participants = [];
@@ -77,7 +106,7 @@ module.exports = {
 
 
             let message = `# War Payout: ${ourFaction.name} vs ${enemyFaction.name}\n`;
-            message += `**Total Earnings:** $${total.toLocaleString()}\n`;
+            message += `**Total Earnings:** $${total.toLocaleString()}${!interaction.options.getInteger('total') ? ' (Auto-Calculated)' : ''}\n`;
             message += `**Leader Cut (${percentage}%):** $${leaderCut.toLocaleString()} (Yameii)\n`;
             message += `**Distributable Pool:** $${pool.toLocaleString()}\n`;
 
