@@ -26,9 +26,14 @@ try {
 }
 
 // Constants
-const TIME_12H = 12 * 60 * 60 * 1000;
-const TIME_7D = 7 * 24 * 60 * 60 * 1000;
-const TIME_30D = 30 * 24 * 60 * 60 * 1000;
+const HOURS = 60 * 60 * 1000;
+const TTL = {
+    USER: 12 * HOURS,
+    FACTION: 12 * HOURS,
+    COMPANY: 12 * HOURS,
+    ITEM: 7 * 24 * HOURS,
+    ITEM_LOOKUP: 30 * 24 * HOURS
+};
 
 // Helper to save cache
 function saveCache() {
@@ -40,8 +45,12 @@ function saveCache() {
 }
 
 // Generic Caching Helper
-async function getCached(collectionName, id, fetchFn, ttl) {
+async function getCached(collectionName, id, fetchFn, ttl, force = false) {
     const now = new Date().getTime();
+
+    // Ensure nested object exists
+    if (!cache[collectionName]) cache[collectionName] = {};
+
     const item = cache[collectionName][id];
     let lastUpdated = 0;
 
@@ -53,37 +62,23 @@ async function getCached(collectionName, id, fetchFn, ttl) {
         }
     }
 
-    if (item && (now - lastUpdated < ttl)) {
+    if (!force && item && (now - lastUpdated < ttl)) {
         console.debug(`Cache: Hit for ${collectionName} ${item.name || id}`);
         return item;
     } else {
-        console.debug(`Cache: Miss for ${collectionName} ${id || 'unknown'}`);
+        if (force) console.debug(`Cache: Force refresh for ${collectionName} ${id || 'unknown'}`);
+        else console.debug(`Cache: Miss for ${collectionName} ${id || 'unknown'}`);
+
         try {
-            // The fetchFn is expected to update the cache and return the data, or we can structure it differently.
-            // Based on the refactor code below, the fetchFn calls saveCache() and returns the data.
-            // But wait, the original logic for checking cache was inside the 'cache' object functions, 
-            // calling the specific fetcher which updated the cache.
-            // In the refactored 'api.cache.user' below, I call 'api.user.basic(user)'.
-            // 'api.user.basic' updates the cache and returns data.
-            // So this helper just needs to return that result.
-            // BUT, I need to make sure I return the logical object.
-
             const result = await fetchFn();
-            console.debug(`Cache: Resolved ${collectionName} ${id}`);
+            console.debug(`Cache: Resolved ${collectionName} ${result.name || result.title || id}`);
 
-            // If the fetchFn updated the cache, we can return the cached item to be consistent 
-            // or just the result. The original returned the cached item in the cache wrapper.
-            // Let's return the result from fetchFn which is usually the data.
-            // However, the original cache wrappers returned `cache.users[user]`.
-            // Let's see if there is a difference.
-            // `api.user.basic` returns `data`. `cache.users[user]` is a subset of `data`?
-            // Original:
-            // `cache.users[user] = { name, player_id, level, ... }`
-            // `return(data)` (full api response)
-            // But `module.exports.cache.user` returned `cache.users[user]`.
-            // So the CACHE wrapper returned the CACHED OBJECT (subset), while the FETCH function returned the FULL API response.
-            // This is a subtle difference.
-            // If I want to maintain compatibility, `getCached` should return the cached item from `cache` after fetching.
+            // Update cache with full result
+            cache[collectionName][id] = {
+                ...result,
+                updated: new Date().toISOString()
+            };
+            saveCache();
 
             return cache[collectionName][id];
         } catch (e) {
@@ -100,16 +95,24 @@ async function fetchApi(path) {
     const data = await response.json();
     if (data.error) {
         console.error(`Torn API Error on ${path}:`, JSON.stringify(data.error));
+        throw new Error(data.error.error || "Torn API Error");
     }
     return data;
 }
 
 const api = {
+    self: {}, // Will be populated by readyCheck
+
     readyCheck: async (key) => {
-        const url = `https://api.torn.com/user/?selections=basic&key=${key}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        console.log(`Torn: Connected as ${data.name} [${data.player_id}]`);
+        try {
+            // Fetch own 'basic' data using V2 (which returns profile object)
+            // By passing null/undefined as user, api.user.basic defaults to 'self' cache key
+            const data = await api.user.basic(null, true);
+            api.self = data;
+            console.log(`Torn: Connected as ${data.name} [${data.player_id}]`);
+        } catch (e) {
+            console.error("Torn: Critical error during startup check", e);
+        }
     },
 
     test: async () => {
@@ -124,47 +127,22 @@ const api = {
         return response.json();
     },
 
-    cache: {
-        async user(user) {
-            return getCached('users', user, async () => await api.user.basic(user), TIME_12H);
-        },
-        async faction(faction) {
-            return getCached('factions', faction, async () => await api.faction.basic(faction), TIME_12H);
-        },
-        async company(company) {
-            return getCached('companies', company, async () => await api.company(company), TIME_12H);
-        },
-        async item(item) {
-            return getCached('items', item, async () => await api.item(item), TIME_7D);
-        }
-    },
-
     user: {
-        async basic(user) {
-            const data = await fetchApi(`https://api.torn.com/user/${user}?selections=basic`);
-            const now = new Date();
-            cache.users[user] = {
-                name: data.name,
-                player_id: data.player_id,
-                level: data.level,
-                gender: data.gender,
-                updated: now.toISOString()
-            };
-            saveCache();
-            return data;
+        async basic(user, force = false) {
+            const endpoint = user ? `https://api.torn.com/v2/user/${user}/basic` : `https://api.torn.com/v2/user/basic`;
+            return getCached('users', user || 'self', async () => {
+                const data = await fetchApi(endpoint);
+                if (data.profile) data.profile.player_id = data.profile.id; // Shim for V1 compatibility
+                return data.profile; // V2 wraps in 'profile'
+            }, TTL.USER, force);
         },
-        async profile(user) {
-            const data = await fetchApi(`https://api.torn.com/user/${user}?selections=profile`);
-            const now = new Date();
-            cache.users[user] = {
-                name: data.name,
-                player_id: data.player_id,
-                level: data.level,
-                gender: data.gender,
-                updated: now.toISOString()
-            };
-            saveCache();
-            return data;
+        async profile(user, force = false) {
+            const endpoint = user ? `https://api.torn.com/v2/user/${user}/profile` : `https://api.torn.com/v2/user/profile`;
+            return getCached('users', user || 'self', async () => {
+                const data = await fetchApi(endpoint);
+                if (data.profile) data.profile.player_id = data.profile.id; // Shim for V1 compatibility
+                return data.profile; // V2 wraps in 'profile'
+            }, TTL.USER, force);
         },
         async stats(user, category, statName) {
             let url = `https://api.torn.com/v2/user`;
@@ -173,28 +151,36 @@ const api = {
             if (statName) { url += `&stat=${statName}`; }
             return fetchApi(url);
         },
-        // Added lookup to maintain feature parity if it was ever needed, though not in original user object
     },
 
     faction: {
-        async basic(faction) {
-            const endpoint = faction ? `https://api.torn.com/v2/faction/${faction}/basic` : `https://api.torn.com/v2/faction/basic`;
-            const response = await fetchApi(endpoint);
-            // v2 return structure: { basic: { ... } }
-            const data = response.basic;
+        async basic(faction, force = false) {
+            // If faction is null, we can't key by ID easily until we fetch.
+            // For now, let's assume if faction is provided we use it as key.
+            // If not provided, we might be fetching our own faction.
+            // We can key it by "own" or similar if needed, but let's see.
+            // If faction is missing, we fetch own faction, resulting data has ID.
 
-            const now = new Date();
-            // Store by ID. If faction is null (own faction), we rely on data.id
-            cache.factions[data.id] = {
-                name: data.name,
-                leader_id: data.leader_id,
-                capacity: data.capacity,
-                rank: data.rank,
-                best_chain: data.best_chain,
-                updated: now.toISOString()
-            };
-            saveCache();
-            return data;
+            // Special handling: if faction is undefined, we can't check cache by ID easily without knowing ID.
+            // However, we can use a special key like 'own' or skip cache check pre-fetch?
+            // Better: If no ID provided, we just fetch to be safe, OR we assume config.factionID if we had it.
+            // Let's implement transparent fetching without ID -> fetch -> cache by ID.
+
+            if (!faction) {
+                const endpoint = `https://api.torn.com/v2/faction/basic`;
+                const response = await fetchApi(endpoint);
+                const data = response.basic;
+                // We can update cache here manually
+                cache.factions[data.id] = { ...data, updated: new Date().toISOString() };
+                saveCache();
+                return data;
+            }
+
+            return getCached('factions', faction, async () => {
+                const endpoint = `https://api.torn.com/v2/faction/${faction}/basic`;
+                const response = await fetchApi(endpoint);
+                return response.basic;
+            }, TTL.FACTION, force);
         },
         async members(faction) {
             const endpoint = faction ? `https://api.torn.com/v2/faction/${faction}/members?striptags=true` : `https://api.torn.com/v2/faction/members?striptags=true`;
@@ -249,37 +235,35 @@ const api = {
         }
     },
 
-    // company was a top-level function in export, but also used as property
-    // Original: module.exports.company = async ...
-    // So api.company should be a function
-    company: async (company) => {
-        const endpoint = company ? `https://api.torn.com/company/${company}?selections=profile` : `https://api.torn.com/company/?selections=profile`;
-        const data = await fetchApi(endpoint);
-        const now = new Date();
-        // company ID is data.company.ID
-        cache.companies[data.company.ID] = {
-            name: data.company.name,
-            id: data.company.ID,
-            company_type: data.company.company_type,
-            director_id: data.company.director,
-            rating: data.company.rating,
-            updated: now.toISOString()
-        };
-        saveCache();
-        return data.company;
+    company: async (company, force = false) => {
+        if (!company) {
+            const endpoint = `https://api.torn.com/company/?selections=profile`;
+            const data = await fetchApi(endpoint);
+            // ID is data.company.ID 
+            // Torn API v1/v2 difference? URL says /company/? so likely v1 standard structure
+            // Let's assume data.company exists.
+            if (data.company) {
+                cache.companies[data.company.ID] = { ...data.company, updated: new Date().toISOString() };
+                saveCache();
+                return data.company;
+            }
+            return data;
+        }
+
+        return getCached('companies', company, async () => {
+            const endpoint = `https://api.torn.com/company/${company}?selections=profile`;
+            const data = await fetchApi(endpoint);
+            return data.company;
+        }, TTL.COMPANY, force);
     },
 
     // item was a function with a .lookup property
     item: Object.assign(
-        async (item) => {
-            const data = await fetchApi(`https://api.torn.com/v2/torn/${item}/items?sort=ASC`);
-            const now = new Date();
-            cache.items[item] = data.items[0]; // Assuming item is ID
-            if (cache.items[item]) {
-                cache.items[item].updated = now.toISOString();
-            }
-            saveCache();
-            return data.items[0];
+        async (item, force = false) => {
+            return getCached('items', item, async () => {
+                const data = await fetchApi(`https://api.torn.com/v2/torn/${item}/items?sort=ASC`);
+                return data.items[0];
+            }, TTL.ITEM, force);
         },
         {
             lookup: async (itemName) => {
@@ -292,7 +276,7 @@ const api = {
                         let last = 0;
                         try { last = new Date(cache.items[itemId].updated).getTime(); } catch (e) { }
 
-                        if (now - last < TIME_30D) {
+                        if (now - last < TTL.ITEM_LOOKUP) {
                             console.debug(`Cache: Hit for item ${cache.items[itemId].name}`);
                             return cache.items[itemId];
                         }
@@ -321,20 +305,7 @@ const api = {
         }
     ),
 
-    self: {
-        async id() {
-            if (!config.tornid) {
-                const url = `https://api.torn.com/user/?selections=basic&key=${config.torn}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                config.tornid = data.player_id;
-                console.log(`Torn: Retrieved default ID as "${data.player_id}"`);
-                return data.player_id;
-            } else {
-                return config.tornid;
-            }
-        }
-    }
+
 };
 
 module.exports = api;

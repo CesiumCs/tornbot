@@ -98,7 +98,7 @@ module.exports = {
         let companyFemales = 0;
         let companyTotal = 0;
         const companyFemalePromises = Object.entries(company.employees).map(([user]) => {
-            return torn.cache.user(user).then(data => {
+            return torn.user.basic(user).then(data => {
                 companyTotal++;
                 if (data.gender === "Female") {
                     companyFemales++;
@@ -110,7 +110,7 @@ module.exports = {
         let factionTotal = 0;
         const factionMembers = await torn.faction.members(KZNKing.faction.faction_id);
         const factionFemalePromises = factionMembers.map((user) => {
-            return torn.cache.user(user.id).then(data => {
+            return torn.user.basic(user.id).then(data => {
                 factionTotal++;
                 if (data.gender === "Female") {
                     factionFemales++;

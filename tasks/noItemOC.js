@@ -17,7 +17,7 @@ module.exports = async (client, torn, config) => {
             if (slot.item_requirement) {
                 if (slot.item_requirement.is_available === false) {
                     const username = (await torn.user.profile(slot.user.id)).name;
-                    const itemname = (await torn.cache.item(slot.item_requirement.id)).name;
+                    const itemname = (await torn.item(slot.item_requirement.id)).name;
                     console.debug(`noItemOC: Found crime with unavailable item: ${crime.name}: ${slot.user.id}`);
                     message += `[${username}](https://www.torn.com/profiles.php?XID=${slot.user.id}) needs [${itemname}](https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${slot.item_requirement.id}) for [${crime.name}](https://www.torn.com/factions.php?step=your&type=1#/tab=crimes&crimeId=${crime.id})\n`;
                     itemsneeded++;

@@ -22,7 +22,7 @@ module.exports = async (client, torn, config) => {
                 .setURL(`https://www.torn.com/factions.php?step=your&type=7#/tab=crimes&crimeId=${crime.id}`);
             if (crime.rewards.money === 0) {
                 const itemPromises = crime.rewards.items.map(item =>
-                    torn.cache.item(item.id).then(itemData => ({
+                    torn.item(item.id, true).then(itemData => ({
                         quantity: item.quantity,
                         name: itemData.name,
                         value: itemData.value.market_price

@@ -55,7 +55,7 @@ module.exports = {
                             ? rewards.items.find(i => (i.id == itemId || i.ID == itemId)).quantity
                             : rewards.items[itemId];
 
-                        const itemData = await torn.item(itemId);
+                        const itemData = await torn.item(itemId, true);
                         if (itemData && itemData.value && itemData.value.market_price) {
                             calculatedTotal += itemData.value.market_price * qt;
                         }

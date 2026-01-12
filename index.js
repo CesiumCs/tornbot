@@ -44,7 +44,7 @@ const client = new Client({
 });
 client.once(Events.ClientReady, readyClient => {
     console.log(`Discord: Connected as ${readyClient.user.tag}`);
-    torn.readyCheck(config.torn);
+    torn.readyCheck();
 });
 client.login(config.token);
 client.commands = new Collection();

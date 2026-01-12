@@ -5,13 +5,13 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('profile')
 		.setDescription('Get your Torn profile')
-		.addIntegerOption(option => 
+		.addIntegerOption(option =>
 			option.setName('id')
-			.setDescription('User ID')),
+				.setDescription('User ID')),
 	async execute(interaction) {
 		let id
 		if (!interaction.options.getInteger('id')) {
-			id = await torn.self.id()
+			id = torn.self.player_id
 			console.log(`Profile: Looking up "${id}"`)
 		} else {
 			id = interaction.options.getInteger('id');
