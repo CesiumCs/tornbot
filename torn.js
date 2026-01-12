@@ -10,7 +10,7 @@ try {
 }
 
 try {
-    cache = require('./cache.json');
+    cache = require('./data/cache.json');
 } catch (e) {
     cache = {
         users: {},
@@ -19,7 +19,11 @@ try {
         items: {}
     };
     try {
-        fs.writeFileSync('./cache.json', JSON.stringify(cache));
+        const dir = './data';
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync('./data/cache.json', JSON.stringify(cache));
     } catch (writeErr) {
         console.error("Failed to write initial cache.json", writeErr);
     }
@@ -38,7 +42,11 @@ const TTL = {
 // Helper to save cache
 function saveCache() {
     try {
-        fs.writeFileSync('./cache.json', JSON.stringify(cache));
+        const dir = './data';
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync('./data/cache.json', JSON.stringify(cache));
     } catch (e) {
         console.error("Failed to save cache:", e);
     }
@@ -150,6 +158,32 @@ const api = {
             if (category) { url += `?cat=${category}`; } else { url += `?cat=all`; }
             if (statName) { url += `&stat=${statName}`; }
             return fetchApi(url);
+        },
+        async job(user, force = false) {
+            const endpoint = user ? `https://api.torn.com/v2/user/${user}/job` : `https://api.torn.com/v2/user/job`;
+            return getCached('users_job', user || 'self', async () => {
+                const data = await fetchApi(endpoint);
+                return data.job;
+            }, TTL.USER, force);
+        },
+        async faction(user, force = false) {
+            const endpoint = user ? `https://api.torn.com/v2/user/${user}/faction` : `https://api.torn.com/v2/user/faction`;
+            return getCached('users_faction', user || 'self', async () => {
+                const data = await fetchApi(endpoint);
+                return data.faction;
+            }, TTL.USER, force);
+        },
+        async get(user, selections = [], force = false) {
+            const selStr = selections.join(',');
+            const endpoint = user ? `https://api.torn.com/v2/user/${user}?selections=${selStr}` : `https://api.torn.com/v2/user?selections=${selStr}`;
+            // Cache usage for composite calls is tricky. For now, let's skip complex caching or cache by selection string key.
+            // A simple key like "users_profile_job_faction_ID" works.
+            const cacheKey = selections.sort().join('_');
+
+            return getCached(`users_${cacheKey}`, user || 'self', async () => {
+                const data = await fetchApi(endpoint);
+                return data;
+            }, TTL.USER, force);
         },
     },
 

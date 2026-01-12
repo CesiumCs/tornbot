@@ -140,6 +140,6 @@ dist
 
 config.json
 state.json
-cache.json
 docker-compose.yml
 public/
+data/

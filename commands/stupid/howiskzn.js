@@ -7,14 +7,17 @@ module.exports = {
         .setDescription('How is KZNKing doing'),
     async execute(interaction) {
         const kznID = 3392710
-        const KZNKing = await torn.user.profile(kznID);
-        let message = `${KZNKing.name} has ${KZNKing.friends} friends and ${KZNKing.enemies} enemies. `;
-        (KZNKing.married.duration) ? message += `He has been married to [${KZNKing.married.spouse_name}](https://www.torn.com/profiles.php?XID=${KZNKing.married.spouse_id}) for ${KZNKing.married.duration} days. ` : message += `He is not married. `;
-        (KZNKing.property === "Private Island") ? message += `He has a Private Island. ` : message += `He does not have a Private Island. `;
-        (KZNKing.job.position === "Director") ? message += `He is director of ${KZNKing.job.company_name}. ` : message += `He is not director of his company. `;
-        (KZNKing.faction.position === "Leader") ? message += `He is leader of ${KZNKing.faction.faction_name}. ` : message += `He is not leader of his faction. `;
+        const data = await torn.user.get(kznID, ['profile', 'job', 'faction']);
 
-        const company = (await torn.company(KZNKing.job.company_id));
+        const KZNKing = { ...data.profile, job: data.job, faction: data.faction };
+
+        let message = `${KZNKing.name} has ${KZNKing.friends} friends and ${KZNKing.enemies} enemies. `;
+        (KZNKing.spouse && KZNKing.spouse.days_married) ? message += `He has been married to [${KZNKing.spouse.name}](https://www.torn.com/profiles.php?XID=${KZNKing.spouse.id}) for ${KZNKing.spouse.days_married} days. ` : message += `He is not married. `;
+        (KZNKing.property === "Private Island") ? message += `He has a Private Island. ` : message += `He does not have a Private Island. `;
+        (KZNKing.job.position === "Director") ? message += `He is director of ${KZNKing.job.name}. ` : message += `He is not director of his company. `;
+        (KZNKing.faction.position === "Leader") ? message += `He is leader of ${KZNKing.faction.name}. ` : message += `He is not leader of his faction. `;
+
+        const company = (await torn.company(KZNKing.job.id));
         const embeds = [];
         if (KZNKing.job.position === "Director") {
             const jobEmbed = new EmbedBuilder()
@@ -60,35 +63,35 @@ module.exports = {
             embeds.push(jobEmbed);
         }
 
-        const faction = await torn.faction.basic(KZNKing.faction.faction_id)
+        const factionBasic = await torn.faction.basic(KZNKing.faction.id)
         if (KZNKing.faction.position === "Leader") {
             const facEmbed = new EmbedBuilder()
-                .setTitle(faction.name)
-                .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction.id}`)
+                .setTitle(factionBasic.name)
+                .setURL(`https://www.torn.com/factions.php?step=profile&ID=${factionBasic.id}`)
                 .addFields(
                     {
                         name: "Members",
-                        value: `${faction.members}/${faction.capacity}`,
+                        value: `${factionBasic.members}/${factionBasic.capacity}`,
                         inline: true
                     },
                     {
                         name: "Rank",
-                        value: `${faction.rank.name} ${faction.rank.division}`,
+                        value: `${factionBasic.rank.name} ${factionBasic.rank.division}`,
                         inline: true
                     },
                     {
                         name: "Respect",
-                        value: `${faction.respect.toLocaleString()}`,
+                        value: `${factionBasic.respect.toLocaleString()}`,
                         inline: true
                     },
                     {
                         name: "Age",
-                        value: `${faction.days_old}`,
+                        value: `${factionBasic.days_old}`,
                         inline: true
                     },
                     {
                         name: "Wars Won",
-                        value: `${faction.rank.wins}`,
+                        value: `${factionBasic.rank.wins}`,
                         inline: true
                     },
                 );
@@ -108,7 +111,7 @@ module.exports = {
 
         let factionFemales = 0;
         let factionTotal = 0;
-        const factionMembers = await torn.faction.members(KZNKing.faction.faction_id);
+        const factionMembers = await torn.faction.members(KZNKing.faction.id);
         const factionFemalePromises = factionMembers.map((user) => {
             return torn.user.basic(user.id).then(data => {
                 factionTotal++;
