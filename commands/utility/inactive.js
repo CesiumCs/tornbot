@@ -29,13 +29,43 @@ module.exports = {
             }
         }
 
-        let members = [];
+        // Fetch own faction members
         try {
-            // Fetch own faction members
             members = await torn.faction.members();
         } catch (e) {
             console.error("inactive: Failed to fetch members", e);
             return interaction.editReply('Failed to fetch faction members from API.');
+        }
+
+        // Fetch currently active/planned/recruiting crimes to check for current participation
+        const activeUserIds = new Set();
+        try {
+            const categories = ['recruiting', 'planned', 'active'];
+            const promises = categories.map(cat => torn.faction.crimes({ category: cat, limit: 100 })); // limit 100 to catch most
+            const results = await Promise.all(promises);
+
+            results.forEach(crimes => {
+                if (crimes && Array.isArray(crimes)) {
+                    crimes.forEach(crime => {
+                        // Only consider truly active/pending statuses
+                        const completedStatuses = ['Successful', 'Failure', 'Canceled', 'Expired', 'Timeout'];
+                        if (completedStatuses.includes(crime.status)) {
+                            return;
+                        }
+
+                        if (crime.slots && Array.isArray(crime.slots)) {
+                            crime.slots.forEach(slot => {
+                                if (slot.user && slot.user.id) {
+                                    activeUserIds.add(slot.user.id);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            console.log(`inactive: Found ${activeUserIds.size} users currently in crimes.`);
+        } catch (e) {
+            console.error("inactive: Failed to fetch current crimes", e);
         }
 
         const inactiveUsers = [];
@@ -43,11 +73,15 @@ module.exports = {
         // Check each member
         for (const member of members) {
             const userId = member.id;
+
+            // Skip if user is currently in a crime
+            if (activeUserIds.has(userId)) continue;
+
             const userName = member.name;
             const userStat = stats[userId];
 
-            if (!userStat) {
-                // Never seen in tracking
+            if (!userStat || !userStat.lastSeen) {
+                // Never seen in tracking or no lastSeen data
                 inactiveUsers.push({
                     id: userId,
                     name: userName,
@@ -60,6 +94,7 @@ module.exports = {
                         id: userId,
                         name: userName,
                         lastSeen: new Date(userStat.lastSeen),
+                        lastCrimeId: userStat.lastCrimeId,
                         daysInactive: Math.floor((Date.now() - userStat.lastSeen) / (24 * 60 * 60 * 1000))
                     });
                 }
@@ -92,7 +127,14 @@ module.exports = {
                     value = "Never seen in OCs (since tracking started)";
                 } else {
                     const ts = Math.floor(user.lastSeen.getTime() / 1000);
-                    value = `Last crime: <t:${ts}:d>\n(<t:${ts}:R>)`;
+                    let dateStr = `<t:${ts}:d>`;
+                    if (user.lastCrimeId) {
+                        const url = `https://www.torn.com/factions.php?step=your&type=1#/tab=crimes&crimeId=${user.lastCrimeId}`;
+                        dateStr = `[Last crime](${url}): <t:${ts}:d>`;
+                    } else {
+                        dateStr = `Last crime: <t:${ts}:d>`;
+                    }
+                    value = `${dateStr}\n(<t:${ts}:R>)`;
                 }
 
                 embed.addFields({

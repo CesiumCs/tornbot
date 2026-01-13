@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('node:path');
 const torn = require('./torn.js');
+const { fetchAndProcessHistory } = require('./utils/ocLogic');
 const express = require('express');
 
 let config, state;
@@ -112,6 +113,26 @@ for (const folder of commandFolders) {
 
 // On client ready, generate upgrades image if missing or on first run
 client.on(Events.ClientReady, async () => {
+    // 1. Check and populate OC Stats if missing
+    try {
+        const statsPath = path.resolve(__dirname, 'data/ocStats.json');
+        const dataDir = path.dirname(statsPath);
+        if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+        if (!fs.existsSync(statsPath)) {
+            console.log('Startup: ocStats.json missing. Initiating auto-population (scanning last 90 days)...');
+            // Scan 90 days by default for safety
+            fetchAndProcessHistory(torn, statsPath, 90).then(count => {
+                console.log(`Startup: Auto-population complete. Updated/Created stats for ${count} users.`);
+            }).catch(e => {
+                console.error('Startup: Auto-population failed', e);
+            });
+        }
+    } catch (err) {
+        console.error('Startup: Error checking ocStats', err);
+    }
+
+    // 2. Upgrades Image check
     try {
         const imgDir = path.resolve(__dirname, 'public');
         if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });

@@ -143,3 +143,4 @@ state.json
 docker-compose.yml
 public/
 data/
+activity_visualization.md

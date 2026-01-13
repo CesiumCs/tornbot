@@ -105,8 +105,79 @@ async function processCrimes(crimesList, stats, memberMap, torn) {
     return updatedUsers.size;
 }
 
+/**
+ * Fetches historical OCs and updates the stats file.
+ * @param {Object} torn The torn wrapper instance.
+ * @param {string} statsPath Path to the stats JSON file.
+ * @param {number} days Number of days back to scan.
+ * @returns {Promise<number>} Number of users updated.
+ */
+async function fetchAndProcessHistory(torn, statsPath, days) {
+    const now = Date.now();
+    const fromTimestamp = Math.floor((now - (days * 24 * 60 * 60 * 1000)) / 1000);
+
+    // Load existing stats
+    let stats = {};
+    if (fs.existsSync(statsPath)) {
+        try {
+            stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+        } catch (e) {
+            console.error("ocLogic: Failed to load existing stats during fetch", e);
+        }
+    }
+
+    // Fetch faction members
+    const memberMap = await getMemberMap(torn);
+
+    let crimesList = [];
+    const categories = ['recruiting', 'planned', 'active', 'successful', 'failed'];
+
+    console.debug(`ocLogic: Scanning history for last ${days} days...`);
+
+    for (const cat of categories) {
+        try {
+            const crimes = await torn.faction.crimes({
+                from: fromTimestamp,
+                sort: 'ASC',
+                category: cat,
+                limit: 300 // Match scanoc batch size
+            });
+
+            if (crimes && Array.isArray(crimes)) {
+                crimesList = crimesList.concat(crimes);
+            }
+        } catch (e) {
+            console.error(`ocLogic: Failed to fetch crimes for category '${cat}'`, e);
+        }
+    }
+
+    if (crimesList.length === 0) {
+        return 0;
+    }
+
+    // Process crimes
+    const updates = await processCrimes(crimesList, stats, memberMap, torn);
+
+    // Save
+    if (updates > 0) {
+        try {
+            const dir = path.dirname(statsPath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+            fs.writeFileSync(statsPath, JSON.stringify(stats, null, 4));
+            console.log(`ocLogic: Updated history for ${updates} users.`);
+        } catch (e) {
+            console.error("ocLogic: Failed to save stats", e);
+        }
+    }
+
+    return updates;
+}
+
 module.exports = {
     getMemberMap,
     calculateCrimeTimestamp,
-    processCrimes
+    processCrimes,
+    fetchAndProcessHistory
 };
