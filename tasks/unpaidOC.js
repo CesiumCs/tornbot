@@ -18,7 +18,7 @@ module.exports = async (client, torn, config) => {
             const execDate = new Date(crime.executed_at * 1000);
             const embed = new EmbedBuilder()
                 .setTitle(crime.name)
-                .setDescription(`Completed <t:${execDate.getTime() / 1000}:R>\nCash earned: $${crime.rewards.money}`)
+                .setDescription(`Completed <t:${execDate.getTime() / 1000}:R>\nCash earned: $${crime.rewards.money.toLocaleString()}\nSplit per person: $${Math.floor((crime.rewards.money * 0.9) / crime.slots.length).toLocaleString()}`)
                 .setURL(`https://www.torn.com/factions.php?step=your&type=7#/tab=crimes&crimeId=${crime.id}`);
             if (crime.rewards.money === 0) {
                 const itemPromises = crime.rewards.items.map(item =>
