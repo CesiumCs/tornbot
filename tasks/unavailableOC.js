@@ -47,16 +47,27 @@ module.exports = async (client, torn, config) => {
         }
         const data = { crimes: crimeList };
         data.crimes.forEach(crime => {
-            crimes.difficulty[crime.difficulty - 1].count++
+            if (crime.difficulty >= 1 && crime.difficulty <= factionMaxCrime) {
+                crimes.difficulty[crime.difficulty - 1].count++
+            }
         });
         let isSomethingZero = false;
         crimes.difficulty.forEach(difficulty => {
             console.debug(`unavailableOC: ${difficulty.name}: ${difficulty.count}`);
             if (difficulty.count === 0) {
-                isSomethingZero = true;
+                const level = parseInt(difficulty.name);
+                let shouldNotify = true;
+                if (config.crimeNotify && config.crimeNotify[level] === false) {
+                    shouldNotify = false;
+                }
+
+                if (shouldNotify) {
+                    isSomethingZero = true;
+                }
+
                 embed.addFields({
                     name: `Difficulty ${difficulty.name}`,
-                    value: `Nobody can sign up for ${difficulty.name} crimes!`
+                    value: `Nobody can sign up for ${difficulty.name} crimes!${shouldNotify ? '' : ' (muted)'}`
                 })
             } else {
                 embed.addFields({
